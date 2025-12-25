@@ -2,6 +2,8 @@
 
 import 'package:go_router/go_router.dart';
 import 'package:poke_up/ux/screens/create_profile_3.dart';
+import 'package:poke_up/ux/screens/home_feed_5.dart';
+import 'package:poke_up/ux/screens/interest_selection_4.dart';
 import 'package:poke_up/ux/screens/login_page_2.dart';
 import 'package:poke_up/ux/screens/welcome_page_1.dart';
 
@@ -22,6 +24,16 @@ class MyAppRouter {
         name: "create_profile",
         path: "/create_profile",
         builder: (context, state) => CreateProfile3(),
+      ),
+      GoRoute(
+        name: "interest_selection",
+        path: "/interest_selection",
+        builder: (context, state) => InterestSelection4(),
+      ),
+      GoRoute(
+        name: "home_feed",
+        path: "/home_feed",
+        builder: (context, state) => HomeFeed5(),
       ),
     ],
   );

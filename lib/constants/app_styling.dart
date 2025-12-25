@@ -8,4 +8,5 @@ class AppStyling {
   static const Color filtersBackground = Color(0xFF0D191B);
   static const Color secondaryColor = Colors.blueGrey;
   static const Color secondaryBackgroundColor = Color(0xFFEEF2FF);
+  static const Color backgroundColor = Color(0xFFF6F8F8);
 }

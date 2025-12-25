@@ -1,4 +1,7 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class CreateProfile3 extends StatefulWidget {
   const CreateProfile3({super.key});
@@ -186,7 +189,11 @@ class _CreateProfile3State extends State<CreateProfile3> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: completedSteps == 3 ? () {} : null,
+                  onPressed: completedSteps == 3
+                      ? () {
+                          context.goNamed("interest_selection");
+                        }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2EC7F0),
                     disabledBackgroundColor: Colors.grey.shade300,
