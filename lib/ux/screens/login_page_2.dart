@@ -1,5 +1,8 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:flutter/material.dart';
 import 'package:poke_up/constants/app_styling.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginPage2 extends StatefulWidget {
   const LoginPage2({super.key});
@@ -20,12 +23,15 @@ class _LoginPage2State extends State<LoginPage2> {
           return Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
                 colors: [
-                  Color(0xFFFFFFFF), // top
+                  Color.fromARGB(255, 193, 241, 249), // top
                   Color.fromARGB(255, 234, 235, 235), // middle
-                  Color(0xFFD9F2F7), // bottom
+                  Color.fromARGB(255, 234, 235, 235), // middle
+                  Color.fromARGB(255, 234, 235, 235), // middle
+                  Color.fromARGB(255, 180, 232, 241), // top
+                  // bottom
                 ],
               ),
             ),
@@ -161,7 +167,9 @@ class _LoginPage2State extends State<LoginPage2> {
                         width: double.infinity,
                         height: 54,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            context.goNamed("create_profile");
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppStyling.primaryColor,
                             shape: RoundedRectangleBorder(
@@ -183,6 +191,8 @@ class _LoginPage2State extends State<LoginPage2> {
                               Icon(
                                 Icons.arrow_forward,
                                 color: AppStyling.primaryLight,
+                                size: 21,
+                                fontWeight: FontWeight.w800,
                               ),
                             ],
                           ),
