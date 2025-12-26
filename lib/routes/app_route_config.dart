@@ -2,15 +2,19 @@
 
 // import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:poke_up/ux/screens/chat_screen_7.dart';
+// import 'package:poke_up/ux/screens/conversations_screen_7.dart';
 import 'package:poke_up/ux/screens/create_profile_3.dart';
 import 'package:poke_up/ux/screens/home_feed_5.dart';
 import 'package:poke_up/ux/screens/interest_selection_4.dart';
 import 'package:poke_up/ux/screens/login_page_2.dart';
 import 'package:poke_up/ux/screens/map_vibes_screen_6.dart';
 import 'package:poke_up/ux/screens/profile_screen_8.dart';
+import 'package:poke_up/ux/screens/sub_screens/chat_screen.dart';
 import 'package:poke_up/ux/screens/welcome_page_1.dart';
 import 'package:poke_up/ux/screens/Navigation.dart';
+// import 'package:poke_up/ux/screens/sub_screens/enable_location.dart';
+// import 'package:poke_up/ux/screens/sub_screens/create_poke_screen.dart';
+// import 'package:poke_up/ux/screens/sub_screens/chat_screen.dart';
 
 class MyAppRouter {
   final GoRouter approuter = GoRouter(
@@ -53,7 +57,7 @@ class MyAppRouter {
           GoRoute(
             name: "chats",
             path: "/app/chats",
-            builder: (context, state) => ChatsScreen(),
+            builder: (context, state) => ChatScreen(),
           ),
           GoRoute(
             name: "profile",

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:poke_up/constants/app_styling.dart';
 
-class ChatsScreen extends StatelessWidget {
-  const ChatsScreen({super.key});
+class ConversationsScreen extends StatelessWidget {
+  const ConversationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
