@@ -1,11 +1,14 @@
 // ignore_for_file: depend_on_referenced_packages
 
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poke_up/ux/screens/chat_screen_7.dart';
 import 'package:poke_up/ux/screens/create_profile_3.dart';
 import 'package:poke_up/ux/screens/home_feed_5.dart';
 import 'package:poke_up/ux/screens/interest_selection_4.dart';
 import 'package:poke_up/ux/screens/login_page_2.dart';
+import 'package:poke_up/ux/screens/map_vibes_screen_6.dart';
+import 'package:poke_up/ux/screens/profile_screen_8.dart';
 import 'package:poke_up/ux/screens/welcome_page_1.dart';
 import 'package:poke_up/ux/screens/Navigation.dart';
 
@@ -45,17 +48,17 @@ class MyAppRouter {
           GoRoute(
             name: "map",
             path: "/app/map",
-            builder: (context, state) => Placeholder(),
+            builder: (context, state) => MapVibesScreen(),
           ),
           GoRoute(
             name: "chats",
             path: "/app/chats",
-            builder: (context, state) => Placeholder(),
+            builder: (context, state) => ChatsScreen(),
           ),
           GoRoute(
             name: "profile",
             path: "/app/profile",
-            builder: (context, state) => Placeholder(),
+            builder: (context, state) => ProfileScreen(),
           ),
         ],
       ),
