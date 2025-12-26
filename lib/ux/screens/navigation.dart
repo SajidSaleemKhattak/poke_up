@@ -1,6 +1,7 @@
 // ignore_for_file: depend_on_referenced_packages
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poke_up/constants/app_styling.dart';
 
 class Navigation extends StatelessWidget {
   final Widget child;
@@ -15,25 +16,40 @@ class Navigation extends StatelessWidget {
       body: child,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
+        selectedItemColor: AppStyling.primaryColor, // brand color
+        unselectedItemColor: AppStyling.primaryColorLight,
+
         onTap: (index) {
+          final String location = GoRouterState.of(context).uri.toString();
+
           switch (index) {
             case 0:
-              context.go('/app/home_feed');
+              if (!location.startsWith('/app/home_feed')) {
+                context.go('/app/home_feed');
+              }
               break;
+
             case 1:
-              context.go('/app/map');
+              if (!location.startsWith('/app/map')) {
+                context.go('/app/map');
+              }
               break;
+
             case 2:
-              context.go('/app/chats');
+              if (!location.startsWith('/app/chats')) {
+                context.go('/app/chats');
+              }
               break;
+
             case 3:
-              context.go('/app/profile');
+              if (!location.startsWith('/app/profile')) {
+                context.go('/app/profile');
+              }
               break;
           }
         },
+
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),

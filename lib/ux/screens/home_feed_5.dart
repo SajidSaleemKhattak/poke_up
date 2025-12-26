@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_up/constants/app_styling.dart';
 
 class HomeFeed5 extends StatelessWidget {
   const HomeFeed5({super.key});
@@ -50,7 +51,7 @@ class HomeFeed5 extends StatelessWidget {
                           Icon(
                             Icons.location_on,
                             size: 16,
-                            color: Color(0xFF2EC7F0),
+                            color: AppStyling.primaryColor,
                           ),
                         ],
                       ),
@@ -78,7 +79,7 @@ class HomeFeed5 extends StatelessWidget {
 
             // 🔹 Filters
             SizedBox(
-              height: 44,
+              height: 38,
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
@@ -164,9 +165,9 @@ class _FilterChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(25),
           color: active ? Colors.black : Colors.white,
         ),
         child: Text(
@@ -174,6 +175,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             color: active ? Colors.white : Colors.black,
             fontWeight: FontWeight.w600,
+            fontSize: 15.0,
           ),
         ),
       ),
@@ -211,7 +213,7 @@ class _VibeCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: highlighted ? const Color(0xFFF1F5FF) : Colors.white,
+        color: highlighted ? AppStyling.secondaryBackgroundColor : Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -232,7 +234,13 @@ class _VibeCard extends StatelessWidget {
                     "$name $age",
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  Text(tag, style: const TextStyle(color: Colors.grey)),
+                  Text(
+                    tag,
+                    style: const TextStyle(
+                      color: AppStyling.secondaryColor,
+                      // fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
               const Spacer(),
@@ -243,12 +251,12 @@ class _VibeCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: const Color(0xFFE6F7FB),
+                  color: AppStyling.primaryLight,
                 ),
                 child: Text(
                   distance,
                   style: const TextStyle(
-                    color: Color(0xFF2EC7F0),
+                    color: AppStyling.primaryColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -282,14 +290,17 @@ class _VibeCard extends StatelessWidget {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: highlighted
-                    ? Colors.indigo
-                    : const Color(0xFF2EC7F0),
+                    ? AppStyling.secondaryBtnColor
+                    : AppStyling.primaryColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
               onPressed: () {},
-              child: Text(buttonText),
+              child: Text(
+                buttonText,
+                style: TextStyle(color: AppStyling.white),
+              ),
             ),
           ),
         ],
