@@ -56,7 +56,10 @@ class MapVibesScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
-          BoxShadow(blurRadius: 10, color: Colors.black.withOpacity(0.05)),
+          BoxShadow(
+            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.05),
+          ),
         ],
       ),
       child: Row(
@@ -93,7 +96,7 @@ class MapVibesScreen extends StatelessWidget {
       height: 120,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFF2EC7F0).withOpacity(0.15),
+        color: const Color(0xFF2EC7F0).withValues(alpha: 0.15),
       ),
       child: Center(
         child: Stack(
@@ -157,7 +160,10 @@ class MapVibesScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(blurRadius: 10, color: Colors.black.withOpacity(0.05)),
+          BoxShadow(
+            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.05),
+          ),
         ],
       ),
       child: Row(
