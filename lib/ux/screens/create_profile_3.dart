@@ -66,7 +66,11 @@ class _CreateProfile3State extends State<CreateProfile3> {
 
               const Text(
                 "Add a photo and tell us your name so friends can recognize you.",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black45,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
 
               const SizedBox(height: 36),
@@ -150,7 +154,7 @@ class _CreateProfile3State extends State<CreateProfile3> {
                   decoration: const InputDecoration(
                     hintText: "e.g. Alex",
                     border: InputBorder.none,
-                    hintStyle: TextStyle(color: Colors.grey),
+                    hintStyle: TextStyle(color: Colors.black54),
                   ),
                 ),
               ),
@@ -187,7 +191,7 @@ class _CreateProfile3State extends State<CreateProfile3> {
               // 🔹 Continue Button
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 59,
                 child: ElevatedButton(
                   onPressed: completedSteps == 3
                       ? () {
@@ -239,7 +243,7 @@ class _CreateProfile3State extends State<CreateProfile3> {
           });
         },
         child: Container(
-          height: 44,
+          height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
             color: isSelected ? const Color(0xFF2EC7F0) : Colors.grey.shade200,
@@ -249,7 +253,8 @@ class _CreateProfile3State extends State<CreateProfile3> {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? Colors.white : Colors.black54,
+                fontSize: 16.0,
               ),
             ),
           ),

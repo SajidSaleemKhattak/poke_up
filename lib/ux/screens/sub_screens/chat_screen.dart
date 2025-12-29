@@ -57,12 +57,10 @@ class ChatScreen extends StatelessWidget {
             ),
           ],
         ),
-        actions: const [
-          Icon(Icons.videocam, color: Colors.grey),
-          SizedBox(width: 16),
-          Icon(Icons.info_outline, color: Colors.grey),
-          SizedBox(width: 12),
-        ],
+        // actions: const [
+        //   Icon(Icons.videocam, color: Colors.grey),
+        //   SizedBox(width: 16),
+        // ],
       ),
 
       // 🔹 Body
@@ -105,7 +103,7 @@ class ChatScreen extends StatelessWidget {
                   seen: true,
                 ),
 
-                _TypingIndicator(),
+                // _TypingIndicator(),
               ],
             ),
           ),
@@ -237,50 +235,50 @@ class _OutgoingMessage extends StatelessWidget {
 /// ===============================
 /// Typing Indicator
 /// ===============================
-class _TypingIndicator extends StatelessWidget {
-  const _TypingIndicator();
+// class _TypingIndicator extends StatelessWidget {
+//   const _TypingIndicator();
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 48, top: 8),
-      child: Container(
-        width: 48,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _Dot(),
-            SizedBox(width: 4),
-            _Dot(),
-            SizedBox(width: 4),
-            _Dot(),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.only(left: 48, top: 8),
+//       child: Container(
+//         width: 48,
+//         padding: const EdgeInsets.symmetric(vertical: 10),
+//         decoration: BoxDecoration(
+//           color: Colors.grey.shade200,
+//           borderRadius: BorderRadius.circular(20),
+//         ),
+//         child: const Row(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             _Dot(),
+//             SizedBox(width: 4),
+//             _Dot(),
+//             SizedBox(width: 4),
+//             _Dot(),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
 
-class _Dot extends StatelessWidget {
-  const _Dot();
+// class _Dot extends StatelessWidget {
+//   const _Dot();
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 6,
-      height: 6,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.grey,
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       width: 6,
+//       height: 6,
+//       decoration: const BoxDecoration(
+//         shape: BoxShape.circle,
+//         color: Colors.grey,
+//       ),
+//     );
+//   }
+// }
 
 /// ===============================
 /// Day Divider

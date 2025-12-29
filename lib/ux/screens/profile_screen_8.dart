@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_up/constants/app_styling.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -24,7 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
-                children: const [
+                children: [
                   Icon(Icons.arrow_back),
                   Spacer(),
                   Text(
@@ -32,7 +33,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   Spacer(),
-                  Icon(Icons.settings),
+                  GestureDetector(
+                    onTap: () => context.push('/app/profile/settings'),
+                    child: const Icon(Icons.settings),
+                  ),
                 ],
               ),
             ),

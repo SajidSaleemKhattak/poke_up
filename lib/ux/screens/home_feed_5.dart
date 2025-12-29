@@ -7,22 +7,22 @@ class HomeFeed5 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAFC),
+      backgroundColor: const Color.fromARGB(255, 236, 239, 239),
 
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF2EC7F0),
+        backgroundColor: AppStyling.primaryColor,
         onPressed: () {},
-        child: const Icon(Icons.add, size: 28),
+        child: const Icon(Icons.add, size: 28, color: AppStyling.white),
       ),
 
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 12),
+            // const SizedBox(height: 12),
 
             // 🔹 Top Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 26, 16, 16), // L, T, R, B
               child: Row(
                 children: [
                   const CircleAvatar(
@@ -213,7 +213,9 @@ class _VibeCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: highlighted ? AppStyling.secondaryBackgroundColor : Colors.white,
+        color: highlighted
+            ? AppStyling.highlighting
+            : const Color.fromARGB(255, 255, 255, 255),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -230,15 +232,32 @@ class _VibeCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "$name $age",
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  Row(
+                    children: [
+                      Text(
+                        "$name",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18.0,
+                        ),
+                      ),
+                      SizedBox(width: 4.0),
+                      Text(
+                        "$age",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.0,
+                          color: AppStyling.secondaryColor,
+                        ),
+                      ),
+                    ],
                   ),
+
                   Text(
                     tag,
                     style: const TextStyle(
                       color: AppStyling.secondaryColor,
-                      // fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -268,7 +287,7 @@ class _VibeCard extends StatelessWidget {
 
           Text(
             text,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
           ),
 
           if (showMap) ...[
@@ -297,9 +316,15 @@ class _VibeCard extends StatelessWidget {
                 ),
               ),
               onPressed: () {},
-              child: Text(
-                buttonText,
-                style: TextStyle(color: AppStyling.white),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Text(
+                  buttonText,
+                  style: TextStyle(
+                    color: AppStyling.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ),

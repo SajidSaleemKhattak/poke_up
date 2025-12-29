@@ -225,7 +225,29 @@ class _LoginPage2State extends State<LoginPage2> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _socialIcon(Icons.g_mobiledata),
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                // subtle lift
+                                BoxShadow(
+                                  blurRadius: 6,
+                                  color: Color(0x1A000000),
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(
+                              15,
+                            ), // space around icon
+                            child: Image.asset(
+                              "assets/images/Google_icon.png",
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                           const SizedBox(width: 20),
                           _socialIcon(Icons.apple),
                           const SizedBox(width: 20),
@@ -333,7 +355,8 @@ class _LoginPage2State extends State<LoginPage2> {
         shape: BoxShape.circle,
         color: Colors.white,
       ),
-      child: Icon(icon, size: 28),
+
+      child: Icon(icon, size: 30),
     );
   }
 }

@@ -27,7 +27,7 @@ class _InterestSelection4State extends State<InterestSelection4> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppStyling.backgroundColor,
+      backgroundColor: AppStyling.secondaryBgColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -87,6 +87,7 @@ class _InterestSelection4State extends State<InterestSelection4> {
                       style: TextStyle(
                         fontSize: 16,
                         color: AppStyling.secondaryColor,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
 
@@ -98,7 +99,7 @@ class _InterestSelection4State extends State<InterestSelection4> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(30),
-                        color: Colors.grey.shade200,
+                        color: AppStyling.white,
                       ),
                       child: const Row(
                         children: [

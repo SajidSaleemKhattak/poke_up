@@ -36,8 +36,8 @@ class Navigation extends StatelessWidget {
               break;
 
             case 2:
-              if (!location.startsWith('/app/chats')) {
-                context.go('/app/chats');
+              if (!location.startsWith('/app/conversations')) {
+                context.go('/app/conversations');
               }
               break;
 
@@ -64,7 +64,7 @@ class Navigation extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.toString();
 
     if (location.startsWith('/app/map')) return 1;
-    if (location.startsWith('/app/chats')) return 2;
+    if (location.startsWith('/app/convesations')) return 2;
     if (location.startsWith('/app/profile')) return 3;
 
     return 0; // home_feed

@@ -2,14 +2,16 @@
 
 // import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:poke_up/ux/screens/conversations_screen_7.dart';
+import 'package:poke_up/ux/screens/conversations_screen_7.dart';
 import 'package:poke_up/ux/screens/create_profile_3.dart';
 import 'package:poke_up/ux/screens/home_feed_5.dart';
 import 'package:poke_up/ux/screens/interest_selection_4.dart';
 import 'package:poke_up/ux/screens/login_page_2.dart';
 import 'package:poke_up/ux/screens/map_vibes_screen_6.dart';
 import 'package:poke_up/ux/screens/profile_screen_8.dart';
-import 'package:poke_up/ux/screens/sub_screens/chat_screen.dart';
+// import 'package:poke_up/ux/screens/sub_screens/chat_screen.dart';
+import 'package:poke_up/ux/screens/sub_screens/community_guideline_screen.dart';
+import 'package:poke_up/ux/screens/sub_screens/settings_screen.dart';
 import 'package:poke_up/ux/screens/welcome_page_1.dart';
 import 'package:poke_up/ux/screens/Navigation.dart';
 // import 'package:poke_up/ux/screens/sub_screens/enable_location.dart';
@@ -55,14 +57,26 @@ class MyAppRouter {
             builder: (context, state) => MapVibesScreen(),
           ),
           GoRoute(
-            name: "chats",
-            path: "/app/chats",
-            builder: (context, state) => ChatScreen(),
+            name: "conversations",
+            path: "/app/conversations",
+            builder: (context, state) => ConversationsScreen(),
           ),
           GoRoute(
             name: "profile",
             path: "/app/profile",
             builder: (context, state) => ProfileScreen(),
+            routes: [
+              GoRoute(
+                name: "settings",
+                path: "/settings",
+                builder: (context, state) => SettingsScreen(),
+              ), 
+              GoRoute(
+                name: "community_guidelines",
+                path: "/community_guideline",
+                builder: (context, state) => CommunityGuidelinesScreen(),
+              ),
+            ],
           ),
         ],
       ),

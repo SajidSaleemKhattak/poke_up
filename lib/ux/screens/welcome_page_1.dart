@@ -9,15 +9,25 @@ class WelcomePage1 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: SafeArea(
+        bottom: false,
         child: Container(
           width: double.infinity,
-          height: double.infinity,
-          color: AppStyling.secondaryBackgroundColor,
-          child: Padding(
+          height: MediaQuery.of(context).size.height,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomLeft,
+              colors: [Color(0xFFE1F3F6), Color(0xFFEEF2FF), Color(0xFFE1F3F6)],
+            ),
+          ),
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 16),
@@ -44,10 +54,10 @@ class WelcomePage1 extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // 🔹 Image Card
+                // 🔹 Image Card (responsive)
                 Container(
                   width: double.infinity,
-                  height: 420,
+                  height: screenHeight * 0.45, // 🔥 adaptive height
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
                   ),
@@ -99,11 +109,9 @@ class WelcomePage1 extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   height: 62,
-
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppStyling.primaryColor,
-                      padding: EdgeInsets.symmetric(vertical: 20.0),
                     ),
                     onPressed: () {
                       context.goNamed('login');
@@ -130,99 +138,77 @@ class WelcomePage1 extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 10),
-                Spacer(),
+                const SizedBox(height: 24),
 
                 // 🔹 Secondary Actions
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    /* 1. OutlinedButton ------------------------------------------------ */
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 20,
-                      ), // empty space around button
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 50,
+                          vertical: 19,
+                        ),
+                        // backgroundColor: Colors.amberAccent,
                       ),
-                      child: ElevatedButton(
+                      onPressed: () {
+                        context.goNamed('login');
+                      },
+                      child: const Text(
+                        'Log In',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppStyling.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
                         onPressed: () {
                           context.goNamed('login');
                         },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: 20,
-                          ),
-                        ),
-                        child: const Text(
-                          'Log In',
-                          style: TextStyle(
-                            fontSize: 18.0,
-                            color: Colors.black,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        icon: const Icon(
+                          Icons.phone_android_outlined,
+                          size: 26,
                         ),
                       ),
                     ),
-
-                    const SizedBox(width: 16),
-
-                    /* 2. Phone icon ---------------------------------------------------- */
-                    GestureDetector(
-                      onTap: () {
-                        context.goNamed("login");
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18.0,
-                          vertical: 7,
-                        ),
-
-                        decoration: BoxDecoration(
-                          color: Colors.amberAccent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            Icons.phone_android_outlined,
-                            size: 27,
-                          ),
-                        ),
+                    SizedBox(width: 16.0),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 4,
                       ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    /* 3. Mail icon ----------------------------------------------------- */
-                    GestureDetector(
-                      onTap: () {
-                        context.goNamed('login');
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14.0,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.email_rounded, size: 30),
-                        ),
+                      decoration: BoxDecoration(
+                        color: AppStyling.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          context.goNamed('login');
+                        },
+                        icon: const Icon(Icons.email_rounded),
                       ),
                     ),
                   ],
                 ),
 
-                const Spacer(),
+                const SizedBox(height: 20),
 
                 // 🔹 Footer
                 const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.only(top: 15),
                   child: Text(
                     "By continuing, you agree to our Terms & Privacy Policy.",
                     textAlign: TextAlign.center,
