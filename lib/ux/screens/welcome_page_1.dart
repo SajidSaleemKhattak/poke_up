@@ -103,12 +103,12 @@ class WelcomePage1 extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                SizedBox(height: screenHeight * 0.06),
 
                 // 🔹 Primary Button
                 SizedBox(
                   width: double.infinity,
-                  height: 62,
+                  height: 58,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppStyling.primaryColor,
@@ -138,75 +138,8 @@ class WelcomePage1 extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 24),
-
-                // 🔹 Secondary Actions
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 50,
-                          vertical: 19,
-                        ),
-                        // backgroundColor: Colors.amberAccent,
-                      ),
-                      onPressed: () {
-                        context.goNamed('login');
-                      },
-                      child: const Text(
-                        'Log In',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppStyling.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          context.goNamed('login');
-                        },
-                        icon: const Icon(
-                          Icons.phone_android_outlined,
-                          size: 26,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 16.0),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppStyling.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          context.goNamed('login');
-                        },
-                        icon: const Icon(Icons.email_rounded),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
                 // 🔹 Footer
+                SizedBox(height: screenHeight * 0.03),
                 const Padding(
                   padding: EdgeInsets.only(top: 15),
                   child: Text(

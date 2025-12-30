@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "99152945788",
+    "project_id": "poke-up-2ad1d",
+    "storage_bucket": "poke-up-2ad1d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:99152945788:android:3c4c190219dbfcb3cd1ff9",
+        "android_client_info": {
+          "package_name": "com.example.poke_up"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "99152945788-lh6frsu0b9npd0qp1f5ckj4jjtkv9sdo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.poke_up",
+            "certificate_hash": "a53c11204b7745d1292d7e816d5bc26cee87f064"
+          }
+        },
+        {
+          "client_id": "99152945788-u9f3uihk9slb93dusl3o5dtviu5970rd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgewUfPdfS4DTQMhH1P1WrD9ztBH1NxVc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "99152945788-9jo5jea1872073jepk58njuta32f7n28.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "99152945788-to3qgeubksl23tpdk0jjoph5isn6782n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.pokeUp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

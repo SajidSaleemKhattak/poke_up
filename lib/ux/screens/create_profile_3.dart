@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poke_up/services/profile/profile_service.dart';
 
 class CreateProfile3 extends StatefulWidget {
   const CreateProfile3({super.key});
@@ -194,8 +195,22 @@ class _CreateProfile3State extends State<CreateProfile3> {
                 height: 59,
                 child: ElevatedButton(
                   onPressed: completedSteps == 3
-                      ? () {
-                          context.goNamed("interest_selection");
+                      ? () async {
+                          try {
+                            await ProfileService.updateBasicProfile(
+                              firstName: firstName,
+                              ageRange: selectedAge!,
+                            );
+
+                            context.goNamed("interest_selection");
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Failed to save profile"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         }
                       : null,
                   style: ElevatedButton.styleFrom(

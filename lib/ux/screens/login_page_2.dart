@@ -1,8 +1,10 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_up/constants/app_styling.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poke_up/services/auth/auth_service.dart';
 
 class LoginPage2 extends StatefulWidget {
   const LoginPage2({super.key});
@@ -225,27 +227,64 @@ class _LoginPage2State extends State<LoginPage2> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                              boxShadow: [
-                                // subtle lift
-                                BoxShadow(
-                                  blurRadius: 6,
-                                  color: Color(0x1A000000),
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(
-                              15,
-                            ), // space around icon
-                            child: Image.asset(
-                              "assets/images/Google_icon.png",
-                              fit: BoxFit.contain,
+                          GestureDetector(
+                            onTap: () async {
+                              try {
+                                final credential =
+                                    await AuthService.signInWithGoogle();
+
+                                if (credential == null) return;
+
+                                final uid = credential.user!.uid;
+
+                                final snapshot = await FirebaseFirestore
+                                    .instance
+                                    .collection('users')
+                                    .doc(uid)
+                                    .get();
+
+                                final data = snapshot.data();
+
+                                if (data == null ||
+                                    data['firstName'] == null ||
+                                    data['ageRange'] == null) {
+                                  // ❌ Profile incomplete
+                                  context.goNamed("create_profile");
+                                } else {
+                                  // ✅ Profile + onboarding complete
+                                  context.go("interest_selection");
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Sign in failed"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              width: 56,
+                              height: 56,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                boxShadow: [
+                                  // subtle lift
+                                  BoxShadow(
+                                    blurRadius: 6,
+                                    color: Color(0x1A000000),
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              padding: const EdgeInsets.all(
+                                15,
+                              ), // space around icon
+                              child: Image.asset(
+                                "assets/images/Google_icon.png",
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 20),

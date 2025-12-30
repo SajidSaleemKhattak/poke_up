@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_up/constants/app_styling.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poke_up/services/profile/profile_service.dart';
 
 class InterestSelection4 extends StatefulWidget {
   const InterestSelection4({super.key});
@@ -192,8 +193,22 @@ class _InterestSelection4State extends State<InterestSelection4> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: selectedInterests.length >= 3
-                      ? () {
-                          context.goNamed("home_feed");
+                      ? () async {
+                          try {
+                            await ProfileService.updateInterests(
+                              selectedInterests.toList(),
+                            );
+
+                            // ✅ onboarding fully completed
+                            context.goNamed("home_feed");
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Failed to save interests"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
