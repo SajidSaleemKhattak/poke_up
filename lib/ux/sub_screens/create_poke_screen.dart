@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:poke_up/services/poke/poke_service.dart';
+import 'package:poke_up/constants/app_styling.dart';
 
 class CreatePokeScreen extends StatefulWidget {
-  const CreatePokeScreen({super.key});
+  final Position position;
+
+  const CreatePokeScreen({super.key, required this.position});
 
   @override
   State<CreatePokeScreen> createState() => _CreatePokeScreenState();
 }
 
 class _CreatePokeScreenState extends State<CreatePokeScreen> {
+  final TextEditingController _textController = TextEditingController();
+
   String selectedCategory = 'Food';
-  double sliderValue = 1; // hours
+  double sliderValue = 1;
   bool friendsOnly = true;
+  bool isSubmitting = false;
 
   final List<Map<String, String>> categories = [
     {'label': 'Food', 'emoji': '🍔'},
@@ -22,9 +30,44 @@ class _CreatePokeScreenState extends State<CreatePokeScreen> {
   ];
 
   @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitPoke() async {
+    if (_textController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please write something')));
+      return;
+    }
+
+    setState(() => isSubmitting = true);
+
+    try {
+      await PokeService.createPoke(
+        text: _textController.text,
+        category: selectedCategory,
+        validForHours: sliderValue,
+        friendsOnly: friendsOnly,
+        position: widget.position,
+      );
+
+      Navigator.pop(context); // back to HomeFeed
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to create poke')));
+    } finally {
+      setState(() => isSubmitting = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppStyling.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -33,7 +76,7 @@ class _CreatePokeScreenState extends State<CreatePokeScreen> {
             children: [
               const SizedBox(height: 12),
 
-              // 🔹 Header
+              // Header
               Row(
                 children: [
                   GestureDetector(
@@ -51,67 +94,35 @@ class _CreatePokeScreenState extends State<CreatePokeScreen> {
 
               const SizedBox(height: 24),
 
-              // 🔹 Vibe Input
+              // Text input
               Container(
                 height: 160,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: Colors.grey.shade300),
                 ),
-                child: Stack(
-                  children: [
-                    TextField(
-                      maxLines: null,
-                      decoration: const InputDecoration(
-                        hintText: "What’s the vibe? (e.g., Coffee run ☕)",
-                        hintStyle: TextStyle(fontSize: 18, color: Colors.grey),
-                        border: InputBorder.none,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: const Color(0xFFEAF7FA),
-                        child: const Icon(
-                          Icons.location_on,
-                          size: 18,
-                          color: Color(0xFF2EC7F0),
-                        ),
-                      ),
-                    ),
-                  ],
+                child: TextField(
+                  controller: _textController,
+                  maxLines: null,
+                  decoration: const InputDecoration(
+                    hintText: "What’s the vibe? (e.g., Coffee run ☕)",
+                    border: InputBorder.none,
+                  ),
                 ),
               ),
 
               const SizedBox(height: 28),
 
-              // 🔹 Category
-              const Text(
-                "CATEGORY",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
+              // Categories
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: categories.map((cat) {
-                  final bool isSelected = selectedCategory == cat['label'];
-
+                  final isSelected = selectedCategory == cat['label'];
                   return GestureDetector(
                     onTap: () {
-                      setState(() {
-                        selectedCategory = cat['label']!;
-                      });
+                      setState(() => selectedCategory = cat['label']!);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -120,29 +131,17 @@ class _CreatePokeScreenState extends State<CreatePokeScreen> {
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(30),
-                        color: isSelected
-                            ? const Color(0xFF2EC7F0)
-                            : Colors.white,
+                        color: isSelected ? Colors.blue : Colors.white,
                         border: Border.all(
-                          color: isSelected
-                              ? Colors.transparent
-                              : Colors.grey.shade300,
+                          color: isSelected ? Colors.transparent : Colors.grey,
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            cat['label']!,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.white : Colors.black,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(cat['emoji']!),
-                        ],
+                      child: Text(
+                        "${cat['emoji']} ${cat['label']}",
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   );
@@ -151,146 +150,38 @@ class _CreatePokeScreenState extends State<CreatePokeScreen> {
 
               const SizedBox(height: 32),
 
-              // 🔹 Valid For
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "VALID FOR",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF7FA),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      "${sliderValue.round()} Hour",
-                      style: const TextStyle(
-                        color: Color(0xFF2EC7F0),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
+              // Slider
               Slider(
                 value: sliderValue,
                 min: 0.25,
                 max: 24,
                 divisions: 4,
-                activeColor: const Color(0xFF2EC7F0),
-                inactiveColor: Colors.grey.shade300,
                 label: "${sliderValue.round()}h",
                 onChanged: (val) {
-                  setState(() {
-                    sliderValue = val;
-                  });
+                  setState(() => sliderValue = val);
                 },
-              ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text("15m"),
-                    Text("4h"),
-                    Text("12h"),
-                    Text("24h"),
-                  ],
-                ),
               ),
 
               const SizedBox(height: 28),
 
-              // 🔹 Friends Only Toggle
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundColor: Color(0xFFEAF7FA),
-                      child: Icon(Icons.people, color: Color(0xFF2EC7F0)),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Friends Only",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            "Visible to your connections",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: friendsOnly,
-                      activeThumbColor: const Color(0xFF2EC7F0),
-                      onChanged: (val) {
-                        setState(() {
-                          friendsOnly = val;
-                        });
-                      },
-                    ),
-                  ],
-                ),
+              // Friends only
+              SwitchListTile(
+                value: friendsOnly,
+                onChanged: (v) => setState(() => friendsOnly = v),
+                title: const Text("Friends only"),
               ),
 
               const SizedBox(height: 40),
 
-              // 🔹 Send Button
+              // Submit
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Send poke
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2EC7F0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Text(
-                        "Send Poke",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward, color: Colors.white),
-                    ],
-                  ),
+                  onPressed: isSubmitting ? null : _submitPoke,
+                  child: isSubmitting
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Send Poke", style: TextStyle(fontSize: 18)),
                 ),
               ),
 

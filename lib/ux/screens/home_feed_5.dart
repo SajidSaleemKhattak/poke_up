@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_up/constants/app_styling.dart';
+import 'package:poke_up/services/location/location_service.dart';
+import 'package:poke_up/ux/sub_screens/create_poke_screen.dart';
 
 class HomeFeed5 extends StatelessWidget {
   const HomeFeed5({super.key});
@@ -11,7 +13,38 @@ class HomeFeed5 extends StatelessWidget {
 
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppStyling.primaryColor,
-        onPressed: () {},
+        onPressed: () async {
+          // get user permission & location
+          final userGranted = await LocationService.requestPermission();
+          if (!userGranted) {
+            // ❌ Permission denied
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Location permission is required to create a poke"),
+              ),
+            );
+            return;
+          }
+          final position = await LocationService.current();
+
+          if (position == null) {
+            // ❌ Permission denied or location off
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Please enable location to create a poke"),
+              ),
+            );
+            return;
+          }
+
+          // ✅ Location available → go to create poke
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CreatePokeScreen(position: position),
+            ),
+          );
+        },
         child: const Icon(Icons.add, size: 28, color: AppStyling.white),
       ),
 
