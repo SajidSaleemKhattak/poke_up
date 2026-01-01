@@ -252,7 +252,7 @@ class _LoginPage2State extends State<LoginPage2> {
                                   context.goNamed("create_profile");
                                 } else {
                                   // ✅ Profile + onboarding complete
-                                  context.go("interest_selection");
+                                  context.goNamed("interest_selection");
                                 }
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
