@@ -42,4 +42,15 @@ class ProfileService {
         data['interests'] != null &&
         (data['interests'] as List).isNotEmpty;
   }
+
+  /// 🔹 Get stream of current user profile
+  static Stream<DocumentSnapshot<Map<String, dynamic>>> get myProfileStream {
+    return _firestore.collection('users').doc(_uid).snapshots();
+  }
+
+  /// 🔹 Get user data by UID
+  static Future<Map<String, dynamic>?> getUserData(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    return doc.data();
+  }
 }

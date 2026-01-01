@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poke_up/services/auth/auth_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -72,7 +73,10 @@ class SettingsScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: TextButton(
-                onPressed: () {},
+                onPressed: () async {
+                  await AuthService.signOut();
+                  // Router redirect will handle navigation to login
+                },
                 child: const Text(
                   "Sign Out",
                   style: TextStyle(

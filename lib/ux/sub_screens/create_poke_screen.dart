@@ -277,12 +277,12 @@ class _CreatePokeScreenState extends State<CreatePokeScreen> {
                       thumbColor: WidgetStateProperty.resolveWith(
                         (states) => states.contains(WidgetState.selected)
                             ? Colors.white
-                            : Colors.grey.shade300,
+                            : Colors.white,
                       ),
                       trackColor: WidgetStateProperty.resolveWith(
                         (states) => states.contains(WidgetState.selected)
                             ? AppStyling.primaryColor
-                            : Colors.grey.shade300,
+                            : AppStyling.primaryLight,
                       ),
                       overlayColor: WidgetStateProperty.all(Colors.transparent),
                     ),
@@ -299,7 +299,7 @@ class _CreatePokeScreenState extends State<CreatePokeScreen> {
                     ),
                     contentPadding: EdgeInsets.zero, // remove extra indent
                     dense: true, // tighter height
-                    activeColor: Colors.white, // fallback (optional)
+                    activeThumbColor: Colors.white, // fallback (optional)
                   ),
                 ),
               ),
@@ -316,6 +316,7 @@ class _CreatePokeScreenState extends State<CreatePokeScreen> {
                     backgroundColor: AppStyling.primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
+                      
                     ),
                   ),
                   child: isSubmitting

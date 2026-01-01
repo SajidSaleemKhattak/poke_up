@@ -32,4 +32,15 @@ class PokeService {
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
+
+  /// 🔹 Get stream of my pokes (ordered by time)
+  static Stream<QuerySnapshot<Map<String, dynamic>>> get myPokesStream {
+    final user = _auth.currentUser;
+    if (user == null) return const Stream.empty();
+
+    return _firestore
+        .collection('pokes')
+        .where('uid', isEqualTo: user.uid)
+        .snapshots();
+  }
 }
