@@ -478,10 +478,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (diff.inHours < 24) return "${diff.inHours} hrs ago";
     return "${diff.inDays} days ago";
   }
+}
 
-  // ===============================
-  // Tabs
-  // ===============================
+// ===============================
+// Tabs
+// ===============================
 Widget _tabButton({
   required String title,
   required bool active,
@@ -502,15 +503,15 @@ Widget _tabButton({
             ),
           ),
           const SizedBox(height: 8),
+
+          // 🔥 FULL-WIDTH INDICATOR
           AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,
             height: 3,
-            width: double.infinity, // 🔥 FULL TAB WIDTH
+            width: double.infinity, // ✅ THIS IS THE KEY
             decoration: BoxDecoration(
-              color: active
-                  ? const Color(0xFF2EC7F0)
-                  : Colors.transparent,
+              color: active ? const Color(0xFF2EC7F0) : Colors.transparent,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -519,7 +520,6 @@ Widget _tabButton({
     ),
   );
 }
-
 
 // ===============================
 // Reusable Widgets
