@@ -1,6 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_up/constants/app_styling.dart';
 import 'package:go_router/go_router.dart';
@@ -230,30 +230,8 @@ class _LoginPage2State extends State<LoginPage2> {
                           GestureDetector(
                             onTap: () async {
                               try {
-                                final credential =
-                                    await AuthService.signInWithGoogle();
-
-                                if (credential == null) return;
-
-                                final uid = credential.user!.uid;
-
-                                final snapshot = await FirebaseFirestore
-                                    .instance
-                                    .collection('users')
-                                    .doc(uid)
-                                    .get();
-
-                                final data = snapshot.data();
-
-                                if (data == null ||
-                                    data['firstName'] == null ||
-                                    data['ageRange'] == null) {
-                                  // ❌ Profile incomplete
-                                  context.goNamed("create_profile");
-                                } else {
-                                  // ✅ Profile + onboarding complete
-                                  context.goNamed("interest_selection");
-                                }
+                                await AuthService.signInWithGoogle();
+                                // Router handles navigation automatically
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -304,8 +282,6 @@ class _LoginPage2State extends State<LoginPage2> {
                           color: AppStyling.secondaryColor,
                         ),
                       ),
-
-                      const SizedBox(height: 20),
                     ],
                   ),
                 ),

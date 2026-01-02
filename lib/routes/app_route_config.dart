@@ -1,9 +1,12 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:poke_up/services/auth/auth_service.dart';
 import 'package:poke_up/services/profile/profile_service.dart';
 
 import 'package:poke_up/ux/screens/welcome_page_1.dart';
@@ -24,6 +27,7 @@ import 'package:poke_up/ux/screens/Navigation.dart';
 class MyAppRouter {
   final GoRouter approuter = GoRouter(
     initialLocation: '/',
+    refreshListenable: GoRouterRefreshStream(AuthService.authStateChanges()),
     redirect: (context, state) async {
       final user = FirebaseAuth.instance.currentUser;
       final location = state.matchedLocation;
@@ -155,3 +159,20 @@ class MyAppRouter {
 }
 
 final router = MyAppRouter().approuter;
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+      (dynamic _) => notifyListeners(),
+    );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}

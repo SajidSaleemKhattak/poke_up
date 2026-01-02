@@ -189,80 +189,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 20),
 
-                // 🔹 Buttons
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16.0,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            backgroundColor: AppStyling.primaryLight,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            child: const Text(
-                              "Edit Vibe",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // This should ideally navigate to CreatePokeScreen or open the modal
-                            // For now we can just show a snackbar or TODO
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2EC7F0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.add,
-                                color: AppStyling.white,
-                                fontWeight: FontWeight.w700,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 4.0),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10.0,
-                                ),
-                                child: const Text(
-                                  "New Poke",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16,
-                                    color: AppStyling.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
+                // // 🔹 Buttons
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(
+                //     horizontal: 20,
+                //     vertical: 16.0,
+                //   ),
+                //   child: Row(
+                //     children: [
+                //       Expanded(
+                //         child: ElevatedButton(
+                //           onPressed: () {},
+                //           style: ElevatedButton.styleFrom(
+                //             shape: RoundedRectangleBorder(
+                //               borderRadius: BorderRadius.circular(30),
+                //             ),
+                //             backgroundColor: AppStyling.primaryLight,
+                //           ),
+                //           child: Padding(
+                //             padding: const EdgeInsets.symmetric(vertical: 10.0),
+                //             child: const Text(
+                //               "Edit Vibe",
+                //               style: TextStyle(
+                //                 fontSize: 16,
+                //                 fontWeight: FontWeight.w800,
+                //                 color: Colors.black,
+                //               ),
+                //             ),
+                //           ),
+                //         ),
+                //       ),
+                //       const SizedBox(width: 12),
+                //       Expanded(
+                //         child: ElevatedButton(
+                //           onPressed: () {
+                //             // This should ideally navigate to CreatePokeScreen or open the modal
+                //             // For now we can just show a snackbar or TODO
+                //           },
+                //           style: ElevatedButton.styleFrom(
+                //             backgroundColor: const Color(0xFF2EC7F0),
+                //             shape: RoundedRectangleBorder(
+                //               borderRadius: BorderRadius.circular(30),
+                //             ),
+                //           ),
+                //           child: Row(
+                //             mainAxisAlignment: MainAxisAlignment.center,
+                //             children: [
+                //               const Icon(
+                //                 Icons.add,
+                //                 color: AppStyling.white,
+                //                 fontWeight: FontWeight.w700,
+                //                 size: 18,
+                //               ),
+                //               const SizedBox(width: 4.0),
+                //               Padding(
+                //                 padding: const EdgeInsets.symmetric(
+                //                   vertical: 10.0,
+                //                 ),
+                //                 child: const Text(
+                //                   "New Poke",
+                //                   style: TextStyle(
+                //                     fontWeight: FontWeight.w800,
+                //                     fontSize: 16,
+                //                     color: AppStyling.white,
+                //                   ),
+                //                 ),
+                //               ),
+                //             ],
+                //           ),
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
                 const SizedBox(height: 28),
 
                 // 🔹 Tabs (Active / Matched)
@@ -336,7 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (diff > 1) return 0;
 
     int streak = 0;
-    DateTime current = normalized.first;
+    // DateTime current = normalized.first;
 
     // Check if we start from today or yesterday
     // If latest is today, count starts at 1. If yesterday, count starts at 1.

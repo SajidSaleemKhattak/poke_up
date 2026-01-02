@@ -18,6 +18,7 @@ class LocationService {
       return null;
     return Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
+      timeLimit: const Duration(seconds: 10),
     );
   }
 

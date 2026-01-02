@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:poke_up/constants/app_styling.dart';
 import 'package:poke_up/services/location/location_service.dart';
 import 'package:poke_up/ux/sub_screens/create_poke_screen.dart';
@@ -14,36 +15,84 @@ class HomeFeed5 extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppStyling.primaryColor,
         onPressed: () async {
-          // get user permission & location
-          final userGranted = await LocationService.requestPermission();
-          if (!userGranted) {
-            // ❌ Permission denied
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Location permission is required to create a poke"),
-              ),
-            );
-            return;
-          }
-          final position = await LocationService.current();
-
-          if (position == null) {
-            // ❌ Permission denied or location off
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Please enable location to create a poke"),
-              ),
-            );
+          // 1. Check Service
+          bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+          if (!serviceEnabled) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    "Please enable Location Services to create a poke.",
+                  ),
+                ),
+              );
+            }
             return;
           }
 
-          // ✅ Location available → go to create poke
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CreatePokeScreen(position: position),
-            ),
-          );
+          // 2. Check Permission
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.denied) {
+            // 3. Ask Permission
+            permission = await Geolocator.requestPermission();
+            if (permission == LocationPermission.denied) {
+              // 4. Denied
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Pokes cannot be created without location access.",
+                    ),
+                  ),
+                );
+              }
+              return;
+            }
+          }
+
+          if (permission == LocationPermission.deniedForever) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    "Location permission is permanently denied. Please enable it in settings.",
+                  ),
+                ),
+              );
+            }
+            return;
+          }
+
+          // 5. Proceed (Get Location)
+          try {
+            final position = await LocationService.current();
+
+            if (position == null) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Unable to get current location."),
+                  ),
+                );
+              }
+              return;
+            }
+
+            if (context.mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CreatePokeScreen(position: position),
+                ),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Error fetching location.")),
+              );
+            }
+          }
         },
         child: const Icon(Icons.add, size: 28, color: AppStyling.white),
       ),

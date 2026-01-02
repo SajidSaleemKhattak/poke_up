@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // IMPORTANT: keep GoogleSignIn as a singleton
   static final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
@@ -37,7 +39,33 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
-      return await _auth.signInWithCredential(credential);
+      final userCredential = await _auth.signInWithCredential(credential);
+
+      // 🔹 Check if user doc exists, if not create it (Validation Logic Support)
+      if (userCredential.user != null) {
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get();
+
+        if (!userDoc.exists) {
+          await _firestore
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .set({
+                'email': userCredential.user!.email,
+                'uid': userCredential.user!.uid,
+                'createdAt': FieldValue.serverTimestamp(),
+                'firstName': null,
+                'ageRange': null,
+                'interests': [],
+                'lastName': null,
+                'profilePicture': userCredential.user!.photoURL,
+              });
+        }
+      }
+
+      return userCredential;
     } catch (e) {
       throw Exception('Google Sign-In failed: $e');
     }
