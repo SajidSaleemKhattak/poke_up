@@ -75,7 +75,6 @@ class ChatService {
     return _firestore
         .collection('conversations')
         .where('participants', arrayContains: user.uid)
-        .orderBy('last_message_time', descending: true)
         .snapshots();
   }
 

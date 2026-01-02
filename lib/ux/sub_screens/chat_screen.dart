@@ -62,6 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       // 🔹 Top Bar
       appBar: AppBar(
+        toolbarHeight: 80,
         backgroundColor: Colors.white,
         elevation: 0,
         leading: const BackButton(color: Colors.black),
@@ -106,10 +107,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const Text(
                   "Online now",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
@@ -132,18 +130,22 @@ class _ChatScreenState extends State<ChatScreen> {
                 }
 
                 final docs = snapshot.data!.docs;
-                
+
                 // Auto scroll to bottom on new messages
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                   if (_scrollController.hasClients) {
-                    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                  if (_scrollController.hasClients) {
+                    _scrollController.jumpTo(
+                      _scrollController.position.maxScrollExtent,
+                    );
                   }
                 });
 
                 return ListView.builder(
                   controller: _scrollController,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data();
@@ -170,10 +172,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
 
           // 🔹 Input Bar
-          _ChatInputBar(
-            controller: _controller,
-            onSend: _sendMessage,
-          ),
+          _ChatInputBar(controller: _controller, onSend: _sendMessage),
         ],
       ),
     );
@@ -188,11 +187,7 @@ class _IncomingMessage extends StatelessWidget {
   final String? time;
   final String? profilePic;
 
-  const _IncomingMessage({
-    required this.text,
-    this.time,
-    this.profilePic,
-  });
+  const _IncomingMessage({required this.text, this.time, this.profilePic});
 
   @override
   Widget build(BuildContext context) {
@@ -205,8 +200,9 @@ class _IncomingMessage extends StatelessWidget {
             CircleAvatar(
               radius: 16,
               backgroundColor: Colors.grey.shade300,
-              backgroundImage:
-                  profilePic != null ? NetworkImage(profilePic!) : null,
+              backgroundImage: profilePic != null
+                  ? NetworkImage(profilePic!)
+                  : null,
               child: profilePic == null
                   ? const Icon(Icons.person, size: 16, color: Colors.white)
                   : null,
@@ -214,16 +210,14 @@ class _IncomingMessage extends StatelessWidget {
             const SizedBox(width: 8),
             Container(
               constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.7),
+                maxWidth: MediaQuery.of(context).size.width * 0.7,
+              ),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: Text(
-                text,
-                style: const TextStyle(fontSize: 16),
-              ),
+              child: Text(text, style: const TextStyle(fontSize: 16)),
             ),
           ],
         ),
@@ -249,11 +243,7 @@ class _OutgoingMessage extends StatelessWidget {
   final String? time;
   final bool seen;
 
-  const _OutgoingMessage({
-    required this.text,
-    this.time,
-    this.seen = false,
-  });
+  const _OutgoingMessage({required this.text, this.time, this.seen = false});
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +252,8 @@ class _OutgoingMessage extends StatelessWidget {
       children: [
         Container(
           constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.7),
+            maxWidth: MediaQuery.of(context).size.width * 0.7,
+          ),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: const Color(0xFF2EC7F0),
@@ -286,7 +277,7 @@ class _OutgoingMessage extends StatelessWidget {
                 if (seen) ...[
                   const SizedBox(width: 4),
                   const Icon(Icons.done_all, size: 14, color: Colors.blue),
-                ]
+                ],
               ],
             ),
           ),
@@ -303,10 +294,7 @@ class _ChatInputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
 
-  const _ChatInputBar({
-    required this.controller,
-    required this.onSend,
-  });
+  const _ChatInputBar({required this.controller, required this.onSend});
 
   @override
   Widget build(BuildContext context) {

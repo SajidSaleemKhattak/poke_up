@@ -88,10 +88,24 @@ class ConversationsScreen extends StatelessWidget {
                     );
                   }
 
+                  // Sort by last_message_time descending on client to avoid composite index requirement
+                  final sortedDocs = [...docs]
+                    ..sort((a, b) {
+                      final ta = (a.data()['last_message_time'] as Timestamp?);
+                      final tb = (b.data()['last_message_time'] as Timestamp?);
+                      final da =
+                          ta?.toDate() ??
+                          DateTime.fromMillisecondsSinceEpoch(0);
+                      final db =
+                          tb?.toDate() ??
+                          DateTime.fromMillisecondsSinceEpoch(0);
+                      return db.compareTo(da);
+                    });
+
                   return ListView.builder(
-                    itemCount: docs.length,
+                    itemCount: sortedDocs.length,
                     itemBuilder: (context, index) {
-                      final data = docs[index].data();
+                      final data = sortedDocs[index].data();
                       final participants = List<String>.from(
                         data['participants'] ?? [],
                       );
@@ -122,7 +136,7 @@ class ConversationsScreen extends StatelessWidget {
                         profilePic: profilePic,
                         onTap: () {
                           context.push(
-                            '/app/chat/${docs[index].id}',
+                            '/app/chat/${sortedDocs[index].id}',
                             extra: {
                               'name': name,
                               'otherUid': otherUid,

@@ -491,16 +491,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onPressed: () async {
                         try {
                           await PokeService.matchUser(pokeId, person);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(this.context).showSnackBar(
                             SnackBar(
                               content: Text("You matched with $name! 🎉"),
                             ),
                           );
                         } catch (e) {
-                          if (!context.mounted) return;
+                          if (!mounted) return;
                           ScaffoldMessenger.of(
-                            context,
+                            this.context,
                           ).showSnackBar(SnackBar(content: Text("Error: $e")));
                         }
                       },
