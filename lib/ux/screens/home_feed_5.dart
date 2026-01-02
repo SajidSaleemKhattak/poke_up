@@ -1,17 +1,44 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:poke_up/constants/app_styling.dart';
 import 'package:poke_up/services/location/location_service.dart';
+import 'package:poke_up/services/poke/poke_service.dart';
 import 'package:poke_up/ux/sub_screens/create_poke_screen.dart';
 
-class HomeFeed5 extends StatelessWidget {
+class HomeFeed5 extends StatefulWidget {
   const HomeFeed5({super.key});
+
+  @override
+  State<HomeFeed5> createState() => _HomeFeed5State();
+}
+
+class _HomeFeed5State extends State<HomeFeed5> {
+  Position? _currentPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLocation();
+  }
+
+  Future<void> _fetchLocation() async {
+    try {
+      final pos = await LocationService.current();
+      if (mounted) {
+        setState(() {
+          _currentPosition = pos;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching location: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 236, 239, 239),
-
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppStyling.primaryColor,
         onPressed: () async {
@@ -96,15 +123,12 @@ class HomeFeed5 extends StatelessWidget {
         },
         child: const Icon(Icons.add, size: 28, color: AppStyling.white),
       ),
-
       body: SafeArea(
         child: Column(
           children: [
-            // const SizedBox(height: 12),
-
             // 🔹 Top Header
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 26, 16, 16), // L, T, R, B
+              padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
               child: Row(
                 children: [
                   const CircleAvatar(
@@ -156,9 +180,7 @@ class HomeFeed5 extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
             // 🔹 Filters
             SizedBox(
               height: 38,
@@ -174,56 +196,37 @@ class HomeFeed5 extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
             // 🔹 Feed
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: const [
-                  _VibeCard(
-                    name: "Sarah",
-                    age: "21",
-                    tag: "Student • 5 mins ago",
-                    distance: "0.2 mi",
-                    text:
-                        "Bored at the library, someone come save me with coffee? ☕️",
-                    buttonText: "Join 👋",
-                  ),
+              child: StreamBuilder<List<Map<String, dynamic>>>(
+                stream: PokeService.homeFeedStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error: ${snapshot.error}"));
+                  }
+                  final pokes = snapshot.data ?? [];
+                  if (pokes.isEmpty) {
+                    return const Center(
+                      child: Text("No pokes nearby. Create one!"),
+                    );
+                  }
 
-                  _VibeCard(
-                    name: "Mike",
-                    age: "23",
-                    tag: "Athlete • 12 mins ago",
-                    distance: "1.5 mi",
-                    text: "Spikeball at the park in 20 mins. Need a 4th! 🏐",
-                    buttonText: "I'm Down 🔥",
-                    showMap: true,
-                  ),
-
-                  _VibeCard(
-                    name: "Jessica",
-                    age: "20",
-                    tag: "Gamer • 30 mins ago",
-                    distance: "0.8 mi",
-                    text: "Anyone down for a quick Mario Kart session? 🏎️",
-                    buttonText: "Let's Go 🎮",
-                  ),
-
-                  _VibeCard(
-                    name: "Alex",
-                    age: "22",
-                    tag: "Quiet • 1 hr ago",
-                    distance: "0.1 mi",
-                    text:
-                        "Quiet study session at the cafe. Don't talk to me unless it's snacks. 🤫🥐",
-                    buttonText: "Quietly Join 🤫",
-                    highlighted: true,
-                  ),
-
-                  SizedBox(height: 80),
-                ],
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: pokes.length,
+                    itemBuilder: (context, index) {
+                      final poke = pokes[index];
+                      return _PokeCard(
+                        poke: poke,
+                        currentPosition: _currentPosition,
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -233,184 +236,191 @@ class HomeFeed5 extends StatelessWidget {
   }
 }
 
-/// ===============================
-/// Filter Chip
-/// ===============================
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool active;
+class _PokeCard extends StatelessWidget {
+  final Map<String, dynamic> poke;
+  final Position? currentPosition;
 
-  const _FilterChip({required this.label, this.active = false});
+  const _PokeCard({required this.poke, this.currentPosition});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          color: active ? Colors.black : Colors.white,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.white : Colors.black,
-            fontWeight: FontWeight.w600,
-            fontSize: 15.0,
-          ),
-        ),
-      ),
-    );
-  }
-}
+    final uid = poke['uid'] as String;
+    final text = poke['text'] as String? ?? "";
+    final category = poke['category'] as String? ?? "General";
+    final locationMap = poke['location'] as Map<String, dynamic>?;
+    final createdAt = (poke['createdAt'] as Timestamp?)?.toDate();
 
-/// ===============================
-/// Vibe Card
-/// ===============================
-class _VibeCard extends StatelessWidget {
-  final String name;
-  final String age;
-  final String tag;
-  final String distance;
-  final String text;
-  final String buttonText;
-  final bool showMap;
-  final bool highlighted;
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink(); // Loading...
+        }
+        final userDoc = snapshot.data!;
+        if (!userDoc.exists) return const SizedBox.shrink();
 
-  const _VibeCard({
-    required this.name,
-    required this.age,
-    required this.tag,
-    required this.distance,
-    required this.text,
-    required this.buttonText,
-    this.showMap = false,
-    this.highlighted = false,
-  });
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        final name = userData?['firstName'] as String? ?? "Unknown";
+        final ageRange = userData?['ageRange'] as String?;
+        final profilePic = userData?['profilePic'] as String?;
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: highlighted
-            ? AppStyling.highlighting
-            : const Color.fromARGB(255, 255, 255, 255),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              const CircleAvatar(
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.person, color: Colors.white),
+        final displayAge = ageRange ?? "";
+
+        // Calculate distance
+        String distanceStr = "";
+        if (currentPosition != null && locationMap != null) {
+          final double lat = locationMap['lat'];
+          final double lng = locationMap['lng'];
+          final double distInMeters = Geolocator.distanceBetween(
+            currentPosition!.latitude,
+            currentPosition!.longitude,
+            lat,
+            lng,
+          );
+          final double distInMiles = distInMeters * 0.000621371;
+          distanceStr = "${distInMiles.toStringAsFixed(1)} mi";
+        }
+
+        // Time ago
+        String timeAgo = "";
+        if (createdAt != null) {
+          final diff = DateTime.now().difference(createdAt);
+          if (diff.inMinutes < 60) {
+            timeAgo = "${diff.inMinutes} mins ago";
+          } else if (diff.inHours < 24) {
+            timeAgo = "${diff.inHours} hrs ago";
+          } else {
+            timeAgo = "${diff.inDays} days ago";
+          }
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
+                  CircleAvatar(
+                    backgroundImage: profilePic != null
+                        ? NetworkImage(profilePic)
+                        : null,
+                    backgroundColor: Colors.grey[200],
+                    child: profilePic == null
+                        ? const Icon(Icons.person, color: Colors.grey)
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "$name",
+                        displayAge.isNotEmpty ? "$name, $displayAge" : name,
                         style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                      SizedBox(width: 4.0),
                       Text(
-                        "$age",
+                        "$category • $timeAgo",
                         style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14.0,
-                          color: AppStyling.secondaryColor,
+                          color: Colors.grey,
+                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
-
-                  Text(
-                    tag,
-                    style: const TextStyle(
-                      color: AppStyling.secondaryColor,
-                      fontWeight: FontWeight.w600,
+                  const Spacer(),
+                  if (distanceStr.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppStyling.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        distanceStr,
+                        style: const TextStyle(
+                          color: AppStyling.primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
-                  ),
                 ],
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: AppStyling.primaryLight,
-                ),
-                child: Text(
-                  distance,
-                  style: const TextStyle(
-                    color: AppStyling.primaryColor,
-                    fontWeight: FontWeight.w600,
+              const SizedBox(height: 12),
+              Text(text, style: const TextStyle(fontSize: 14, height: 1.4)),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Handle join
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text(
+                    "Join 👋",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+}
 
-          const SizedBox(height: 16),
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  const _FilterChip({required this.label, this.active = false});
 
-          Text(
-            text,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: active ? Colors.black : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: active ? null : Border.all(color: Colors.grey[300]!),
+      ),
+      child: Center(
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : Colors.black,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
           ),
-
-          if (showMap) ...[
-            const SizedBox(height: 16),
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(child: Text("Map Preview")),
-            ),
-          ],
-
-          const SizedBox(height: 16),
-
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: highlighted
-                    ? AppStyling.secondaryBtnColor
-                    : AppStyling.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () {},
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                child: Text(
-                  buttonText,
-                  style: TextStyle(
-                    color: AppStyling.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
