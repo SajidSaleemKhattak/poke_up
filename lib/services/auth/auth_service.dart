@@ -59,6 +59,7 @@ class AuthService {
                 'firstName': null,
                 'ageRange': null,
                 'interests': [],
+                'currentLocation': null, // 📍 New field for location gating
                 'lastName': null,
                 'profilePicture': userCredential.user!.photoURL,
               });

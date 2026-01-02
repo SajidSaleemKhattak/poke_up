@@ -1,10 +1,62 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:poke_up/services/chat/chat_service.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
-class ChatScreen extends StatelessWidget {
-  const ChatScreen({super.key});
+class ChatScreen extends StatefulWidget {
+  final String chatId;
+  final String? otherUid;
+  final String? otherName;
+  final String? otherProfilePic;
+
+  const ChatScreen({
+    super.key,
+    required this.chatId,
+    this.otherUid,
+    this.otherName,
+    this.otherProfilePic,
+  });
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    _controller.clear();
+    try {
+      await ChatService.sendMessage(widget.chatId, text);
+      // Scroll to bottom after sending
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 50,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    } catch (e) {
+      debugPrint("Error sending message: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -19,11 +71,17 @@ class ChatScreen extends StatelessWidget {
             Stack(
               alignment: Alignment.bottomRight,
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 20,
-                  backgroundColor: Colors.grey,
-                  child: Icon(Icons.person, color: Colors.white),
+                  backgroundColor: Colors.grey.shade300,
+                  backgroundImage: widget.otherProfilePic != null
+                      ? NetworkImage(widget.otherProfilePic!)
+                      : null,
+                  child: widget.otherProfilePic == null
+                      ? const Icon(Icons.person, color: Colors.white)
+                      : null,
                 ),
+                // Online indicator (hardcoded for now as we don't have presence yet)
                 Container(
                   width: 10,
                   height: 10,
@@ -35,18 +93,18 @@ class ChatScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 10),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Sarah M.",
-                  style: TextStyle(
+                  widget.otherName ?? "User",
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Colors.black,
                   ),
                 ),
-                Text(
+                const Text(
                   "Online now",
                   style: TextStyle(
                     fontSize: 12,
@@ -57,59 +115,65 @@ class ChatScreen extends StatelessWidget {
             ),
           ],
         ),
-        // actions: const [
-        //   Icon(Icons.videocam, color: Colors.grey),
-        //   SizedBox(width: 16),
-        // ],
       ),
 
       // 🔹 Body
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              children: const [
-                _DayDivider(label: "TODAY"),
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: ChatService.getMessagesStream(widget.chatId),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Error loading messages"));
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                _IncomingMessage(
-                  text: "Hey! 👋 Are you still free to hang out later?",
-                  time: "2:30 PM",
-                ),
+                final docs = snapshot.data!.docs;
+                
+                // Auto scroll to bottom on new messages
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                   if (_scrollController.hasClients) {
+                    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                  }
+                });
 
-                _OutgoingMessage(
-                  text:
-                      "Yeah, definitely! I just finished my shift.",
-                ),
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data();
+                    final isMe = data['senderId'] == currentUserId;
+                    final text = data['text'] ?? '';
+                    final Timestamp? ts = data['createdAt'];
+                    final time = ts != null
+                        ? timeago.format(ts.toDate(), locale: 'en_short')
+                        : '';
 
-                _OutgoingMessage(
-                  text: "Where were you thinking?",
-                  time: "2:32 PM",
-                  seen: true,
-                ),
-
-                _IncomingMessage(
-                  text:
-                      'I was thinking that new boba place on 4th? "Bubble Pop" I think it\'s called 🧋',
-                ),
-
-                _OutgoingMessage(
-                  text: "Oh I've been wanting to try that!",
-                ),
-
-                _OutgoingMessage(
-                  text: "Lets meet at 4pm?",
-                  time: "2:35 PM",
-                  seen: true,
-                ),
-
-                // _TypingIndicator(),
-              ],
+                    if (isMe) {
+                      return _OutgoingMessage(text: text, time: time);
+                    } else {
+                      return _IncomingMessage(
+                        text: text,
+                        time: time,
+                        profilePic: widget.otherProfilePic,
+                      );
+                    }
+                  },
+                );
+              },
             ),
           ),
 
           // 🔹 Input Bar
-          const _ChatInputBar(),
+          _ChatInputBar(
+            controller: _controller,
+            onSend: _sendMessage,
+          ),
         ],
       ),
     );
@@ -122,10 +186,12 @@ class ChatScreen extends StatelessWidget {
 class _IncomingMessage extends StatelessWidget {
   final String text;
   final String? time;
+  final String? profilePic;
 
   const _IncomingMessage({
     required this.text,
     this.time,
+    this.profilePic,
   });
 
   @override
@@ -136,15 +202,19 @@ class _IncomingMessage extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.grey,
-              child: Icon(Icons.person, size: 16, color: Colors.white),
+              backgroundColor: Colors.grey.shade300,
+              backgroundImage:
+                  profilePic != null ? NetworkImage(profilePic!) : null,
+              child: profilePic == null
+                  ? const Icon(Icons.person, size: 16, color: Colors.white)
+                  : null,
             ),
             const SizedBox(width: 8),
             Container(
-              constraints:
-                  BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+              constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.7),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.grey.shade200,
@@ -191,8 +261,8 @@ class _OutgoingMessage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Container(
-          constraints:
-              BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+          constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.7),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: const Color(0xFF2EC7F0),
@@ -200,29 +270,23 @@ class _OutgoingMessage extends StatelessWidget {
           ),
           child: Text(
             text,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.white),
           ),
         ),
         if (time != null)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(right: 12, top: 4),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   time!,
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-                const SizedBox(width: 4),
-                if (seen)
-                  const Icon(
-                    Icons.done_all,
-                    size: 16,
-                    color: Colors.blue,
-                  ),
+                if (seen) ...[
+                  const SizedBox(width: 4),
+                  const Icon(Icons.done_all, size: 14, color: Colors.blue),
+                ]
               ],
             ),
           ),
@@ -233,130 +297,66 @@ class _OutgoingMessage extends StatelessWidget {
 }
 
 /// ===============================
-/// Typing Indicator
-/// ===============================
-// class _TypingIndicator extends StatelessWidget {
-//   const _TypingIndicator();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.only(left: 48, top: 8),
-//       child: Container(
-//         width: 48,
-//         padding: const EdgeInsets.symmetric(vertical: 10),
-//         decoration: BoxDecoration(
-//           color: Colors.grey.shade200,
-//           borderRadius: BorderRadius.circular(20),
-//         ),
-//         child: const Row(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             _Dot(),
-//             SizedBox(width: 4),
-//             _Dot(),
-//             SizedBox(width: 4),
-//             _Dot(),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// class _Dot extends StatelessWidget {
-//   const _Dot();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       width: 6,
-//       height: 6,
-//       decoration: const BoxDecoration(
-//         shape: BoxShape.circle,
-//         color: Colors.grey,
-//       ),
-//     );
-//   }
-// }
-
-/// ===============================
-/// Day Divider
-/// ===============================
-class _DayDivider extends StatelessWidget {
-  final String label;
-
-  const _DayDivider({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// ===============================
 /// Chat Input Bar
 /// ===============================
 class _ChatInputBar extends StatelessWidget {
-  const _ChatInputBar();
+  final TextEditingController controller;
+  final VoidCallback onSend;
+
+  const _ChatInputBar({
+    required this.controller,
+    required this.onSend,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: SafeArea(
         child: Row(
           children: [
-            CircleAvatar(
-              backgroundColor: Colors.grey.shade200,
-              child: const Icon(Icons.add),
-            ),
-            const SizedBox(width: 8),
+            // Container(
+            //   padding: const EdgeInsets.all(8),
+            //   decoration: BoxDecoration(
+            //     color: Colors.grey.shade100,
+            //     shape: BoxShape.circle,
+            //   ),
+            //   child:
+            //       const Icon(Icons.add, color: Colors.blueAccent, size: 24),
+            // ),
+            // const SizedBox(width: 12),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(30),
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: "Message...",
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    const Icon(Icons.emoji_emotions_outlined),
-                  ],
+                child: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    hintText: "Type a message...",
+                    border: InputBorder.none,
+                  ),
+                  onSubmitted: (_) => onSend(),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: const Color(0xFF2EC7F0),
-              child: const Icon(Icons.send, color: Colors.white),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: onSend,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2EC7F0),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.send, color: Colors.white, size: 20),
+              ),
             ),
           ],
         ),

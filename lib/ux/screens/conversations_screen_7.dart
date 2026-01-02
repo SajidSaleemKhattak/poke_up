@@ -1,11 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:poke_up/constants/app_styling.dart';
+import 'package:poke_up/services/chat/chat_service.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class ConversationsScreen extends StatelessWidget {
   const ConversationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: AppStyling.backgroundColor,
       body: SafeArea(
@@ -30,7 +37,7 @@ class ConversationsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // 🔹 Who’s Free Now
+            // 🔹 Who’s Free Now (Static for now)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(
@@ -60,36 +67,73 @@ class ConversationsScreen extends StatelessWidget {
 
             // 🔹 Chats List
             Expanded(
-              child: ListView(
-                children: const [
-                  _ChatTile(
-                    name: "Sarah M.",
-                    message: "Let's meet at 4pm?",
-                    time: "2m",
-                    unread: true,
-                  ),
-                  _ChatTile(
-                    name: "Jake",
-                    message: "🚀 Poke accepted! Plan a hangout.",
-                    time: "10m",
-                    highlighted: true,
-                  ),
-                  _ChatTile(
-                    name: "Alex",
-                    message: "See you there!",
-                    time: "1h",
-                  ),
-                  _ChatTile(
-                    name: "Mia",
-                    message: "Haha same here",
-                    time: "Yesterday",
-                  ),
-                  _ChatTile(
-                    name: "Daniel",
-                    message: "Maybe next weekend?",
-                    time: "Yesterday",
-                  ),
-                ],
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: ChatService.myChatsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(child: Text("Error loading chats"));
+                  }
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final docs = snapshot.data!.docs;
+                  if (docs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        "No chats yet. Match with someone to start chatting!",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final data = docs[index].data();
+                      final participants = List<String>.from(
+                        data['participants'] ?? [],
+                      );
+                      final participantDetails =
+                          data['participantDetails'] as Map<String, dynamic>? ??
+                          {};
+
+                      final currentUid = currentUser?.uid;
+                      final otherUid = participants.firstWhere(
+                        (uid) => uid != currentUid,
+                        orElse: () => '',
+                      );
+
+                      final otherUser = participantDetails[otherUid] ?? {};
+                      final name = otherUser['name'] ?? 'User';
+                      final profilePic = otherUser['profilePic'];
+
+                      final lastMessage = data['last_message'] ?? '';
+                      final Timestamp? ts = data['last_message_time'];
+                      final time = ts != null
+                          ? timeago.format(ts.toDate(), locale: 'en_short')
+                          : '';
+
+                      return _ChatTile(
+                        name: name,
+                        message: lastMessage,
+                        time: time,
+                        profilePic: profilePic,
+                        onTap: () {
+                          context.push(
+                            '/app/chat/${docs[index].id}',
+                            extra: {
+                              'name': name,
+                              'otherUid': otherUid,
+                              'profilePic': profilePic,
+                            },
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -149,76 +193,95 @@ class _ChatTile extends StatelessWidget {
   final String name;
   final String message;
   final String time;
+  final String? profilePic;
   final bool unread;
   final bool highlighted;
+  final VoidCallback onTap;
 
   const _ChatTile({
     required this.name,
     required this.message,
     required this.time,
+    required this.onTap,
+    this.profilePic,
     this.unread = false,
     this.highlighted = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: highlighted ? AppStyling.primaryLight : Colors.transparent,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors.grey.shade300,
-            child: const Icon(Icons.person),
-          ),
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        color: highlighted ? AppStyling.primaryLight : Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.grey.shade300,
+              backgroundImage: profilePic != null
+                  ? NetworkImage(profilePic!)
+                  : null,
+              child: profilePic == null ? const Icon(Icons.person) : null,
+            ),
 
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    message,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: highlighted
+                          ? AppStyling.primaryColor
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message,
+                  time,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     color: highlighted
                         ? AppStyling.primaryColor
-                        : Colors.grey.shade600,
+                        : Colors.grey.shade500,
                   ),
                 ),
+                if (unread) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF2EC7F0),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
               ],
             ),
-          ),
-
-          Column(
-            children: [
-              Text(
-                time,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-              ),
-              const SizedBox(height: 6),
-              if (unread)
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFF2EC7F0),
-                  ),
-                ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

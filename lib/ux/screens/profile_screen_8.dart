@@ -4,6 +4,7 @@ import 'package:poke_up/constants/app_styling.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poke_up/services/profile/profile_service.dart';
 import 'package:poke_up/services/poke/poke_service.dart';
+import 'package:poke_up/services/chat/chat_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -384,50 +385,146 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildActiveList(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> pokes,
   ) {
-    // Flatten list of interested people
-    final List<Map<String, dynamic>> items = [];
+    // Filter to show pokes that have interested people
+    final activePokesWithInterest = pokes.where((doc) {
+      final data = doc.data();
+      final interested = data['interestedPeople'] as List?;
+      return interested != null && interested.isNotEmpty;
+    }).toList();
 
-    for (var poke in pokes) {
-      final data = poke.data();
-      final interested = List<String>.from(data['interestedPeople'] ?? []);
-      final pokeText = data['text'] as String? ?? "Poke";
-      final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
-      final timeStr = createdAt != null ? _timeAgo(createdAt) : "";
-
-      for (var uid in interested) {
-        items.add({'uid': uid, 'pokeText': pokeText, 'time': timeStr});
-      }
-    }
-
-    if (items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.notifications_none,
-              size: 48,
-              color: Colors.grey.shade300,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "No active requests",
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-      );
+    if (activePokesWithInterest.isEmpty) {
+      return const Center(child: Text("No active pokes with interest yet."));
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: items.length,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: activePokesWithInterest.length,
       itemBuilder: (context, index) {
-        final item = items[index];
-        return _UserRequestCard(
-          uid: item['uid'],
-          pokeText: item['pokeText'],
-          time: item['time'],
+        final doc = activePokesWithInterest[index];
+        final data = doc.data();
+        final pokeId = doc.id;
+        final pokeText = data['text'] as String? ?? "Poke";
+        final interestedPeople = List<Map<String, dynamic>>.from(
+          data['interestedPeople'] ?? [],
+        );
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppStyling.primaryLight.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.bolt,
+                      color: AppStyling.primaryColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      pokeText,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Interested People:",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: interestedPeople.length,
+                separatorBuilder: (c, i) => const Divider(height: 1),
+                itemBuilder: (context, i) {
+                  final person = interestedPeople[i];
+                  final name = person['name'] ?? person['firstName'] ?? 'User';
+                  final pic = person['profilePic'];
+
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: pic != null ? NetworkImage(pic) : null,
+                      child: pic == null
+                          ? const Icon(Icons.person, size: 20)
+                          : null,
+                    ),
+                    title: Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    trailing: ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          await PokeService.matchUser(pokeId, person);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("You matched with $name! 🎉"),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: $e")),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppStyling.primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: const Text("Allow"),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         );
       },
     );
@@ -436,37 +533,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildMatchedList(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> pokes,
   ) {
-    final List<Map<String, dynamic>> items = [];
+    final allMatches = <Map<String, dynamic>>[];
 
-    for (var poke in pokes) {
-      final data = poke.data();
-      final matched = List<String>.from(data['matchedPeople'] ?? []);
+    for (var doc in pokes) {
+      final data = doc.data();
+      final matches = List<Map<String, dynamic>>.from(
+        data['matchedPeople'] ?? [],
+      );
       final pokeText = data['text'] as String? ?? "Poke";
 
-      for (var uid in matched) {
-        items.add({'uid': uid, 'pokeText': pokeText});
+      for (var match in matches) {
+        allMatches.add({...match, 'pokeText': pokeText, 'pokeId': doc.id});
       }
     }
 
-    if (items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.people_outline, size: 48, color: Colors.grey.shade300),
-            const SizedBox(height: 12),
-            const Text("No matches yet", style: TextStyle(color: Colors.grey)),
-          ],
-        ),
-      );
+    // Sort by matchedAt descending if available
+    allMatches.sort((a, b) {
+      final tA = a['matchedAt'] != null
+          ? DateTime.parse(a['matchedAt'])
+          : DateTime(0);
+      final tB = b['matchedAt'] != null
+          ? DateTime.parse(b['matchedAt'])
+          : DateTime(0);
+      return tB.compareTo(tA);
+    });
+
+    if (allMatches.isEmpty) {
+      return const Center(child: Text("No matches yet."));
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: items.length,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: allMatches.length,
       itemBuilder: (context, index) {
-        final item = items[index];
-        return _MatchedUserCard(uid: item['uid'], pokeText: item['pokeText']);
+        final match = allMatches[index];
+        return _MatchedUserCard(match: match);
       },
     );
   }
@@ -561,109 +662,60 @@ class _StatBox extends StatelessWidget {
   }
 }
 
-class _UserRequestCard extends StatelessWidget {
-  final String uid;
-  final String pokeText;
-  final String time;
+class _MatchedUserCard extends StatelessWidget {
+  final Map<String, dynamic> match;
 
-  const _UserRequestCard({
-    required this.uid,
-    required this.pokeText,
-    required this.time,
-  });
+  const _MatchedUserCard({required this.match});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: ProfileService.getUserData(uid),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData && !snapshot.hasError) {
-          return Container(
-            height: 80,
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
-            ),
-          );
-        }
+    final name = match['name'] ?? match['firstName'] ?? 'Unknown';
+    final pic = match['profilePic'];
+    final pokeText = match['pokeText'];
+    final uid = match['uid'];
 
-        final user = snapshot.data;
-        final name = user?['firstName'] ?? 'Unknown User';
-        final pic = user?['profilePic'];
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: const Color(0xFFEAF7FA),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(blurRadius: 10, color: Colors.black.withOpacity(0.05)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage: pic != null ? NetworkImage(pic) : null,
-                    child: pic == null
-                        ? const Icon(Icons.person, color: Colors.white)
-                        : null,
-                    backgroundColor: Colors.grey.shade300,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          "Interested in your poke",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    time,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: pic != null ? NetworkImage(pic) : null,
+                child: pic == null
+                    ? const Icon(Icons.person, color: Colors.white)
+                    : null,
+                backgroundColor: Colors.grey.shade300,
               ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.format_quote,
-                      size: 20,
-                      color: Color(0xFF2EC7F0),
+                    const Text(
+                      "MATCHED",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppStyling.primaryColor,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        pokeText,
-                        style: const TextStyle(
-                          fontStyle: FontStyle.italic,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -671,118 +723,61 @@ class _UserRequestCard extends StatelessWidget {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-}
-
-class _MatchedUserCard extends StatelessWidget {
-  final String uid;
-  final String pokeText;
-
-  const _MatchedUserCard({required this.uid, required this.pokeText});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: ProfileService.getUserData(uid),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData && !snapshot.hasError) {
-          return Container(
-            height: 80,
-            margin: const EdgeInsets.only(bottom: 12),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(10),
             ),
-          );
-        }
-
-        final user = snapshot.data;
-        final name = user?['firstName'] ?? 'Unknown User';
-        final pic = user?['profilePic'];
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 10,
-                color: Colors.black.withValues(alpha: 0.05),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage: pic != null ? NetworkImage(pic) : null,
-                    child: pic == null
-                        ? const Icon(Icons.person, color: Colors.white)
-                        : null,
-                    backgroundColor: Colors.grey.shade300,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "MATCHED",
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppStyling.primaryColor,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+            child: Row(
+              children: [
+                const Icon(Icons.bolt, size: 16, color: Colors.grey),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "$pokeText",
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontStyle: FontStyle.italic,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Matched on: $pokeText",
-                style: const TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    // Navigate to chat or profile
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppStyling.primaryColor),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text(
-                    "Message",
-                    style: TextStyle(color: AppStyling.primaryColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                try {
+                  final chatId = await ChatService.createChat(uid, match);
+                  if (context.mounted) {
+                    context.push(
+                      '/app/chat/$chatId',
+                      extra: {'name': name, 'otherUid': uid, 'profilePic': pic},
+                    );
+                  }
+                } catch (e) {
+                  debugPrint("Error opening chat: $e");
+                }
+              },
+              icon: const Icon(Icons.chat_bubble_outline, size: 18),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppStyling.primaryColor),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                foregroundColor: AppStyling.primaryColor,
+              ),
+              label: const Text("Message"),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

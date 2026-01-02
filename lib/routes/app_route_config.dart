@@ -18,6 +18,7 @@ import 'package:poke_up/ux/screens/home_feed_5.dart';
 import 'package:poke_up/ux/screens/map_vibes_screen_6.dart';
 import 'package:poke_up/ux/screens/conversations_screen_7.dart';
 import 'package:poke_up/ux/screens/profile_screen_8.dart';
+import 'package:poke_up/ux/sub_screens/chat_screen.dart';
 
 import 'package:poke_up/ux/sub_screens/settings_screen.dart';
 import 'package:poke_up/ux/sub_screens/community_guideline_screen.dart';
@@ -153,6 +154,20 @@ class MyAppRouter {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        name: 'chat',
+        path: '/app/chat/:chatId',
+        builder: (context, state) {
+          final chatId = state.pathParameters['chatId']!;
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return ChatScreen(
+            chatId: chatId,
+            otherUid: extra['otherUid'],
+            otherName: extra['name'],
+            otherProfilePic: extra['profilePic'],
+          );
+        },
       ),
     ],
   );

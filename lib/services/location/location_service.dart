@@ -1,63 +1,81 @@
-import 'dart:async';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geoflutterfire2/geoflutterfire2.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 
 class LocationService {
-  static final GeoFlutterFire _geo = GeoFlutterFire();
-
-  /// one-shot
-  static Future<Position?> current() async {
-    if (!await Geolocator.isLocationServiceEnabled()) return null;
-    var p = await Geolocator.checkPermission();
-    if (p == LocationPermission.denied) {
-      p = await Geolocator.requestPermission();
-    }
-    if (p != LocationPermission.whileInUse && p != LocationPermission.always)
-      return null;
-    return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-      timeLimit: const Duration(seconds: 10),
-    );
-  }
-
-  /// continuous stream (battery-friendly)
-  static Stream<Position> stream() => Geolocator.getPositionStream(
-    locationSettings: const LocationSettings(
-      distanceFilter: 50,
-      accuracy: LocationAccuracy.high,
-    ),
-  );
-
-  /// city name for header
-  static Future<String> cityFrom(Position p) async {
-    final list = await placemarkFromCoordinates(p.latitude, p.longitude);
-    if (list.isEmpty) return 'Nearby';
-    return list.first.locality ?? 'Nearby';
-  }
-
-  /// posts within radiusKm
-  static Stream<List<DocumentSnapshot>> nearbyPosts(
-    Position center,
-    double radiusKm,
-  ) {
-    final geoPoint = GeoFirePoint(center.latitude, center.longitude);
-    return _geo
-        .collection(
-          collectionRef: FirebaseFirestore.instance.collection('posts'),
-        )
-        .within(
-          center: geoPoint,
-          radius: radiusKm,
-          field: 'geoPoint',
-          strictMode: true,
-        );
-  }
-
-  /// returns true if we end up with a usable location
+  /// Request permission and return true if granted
   static Future<bool> requestPermission() async {
-    final pos = await current(); // already asks permission inside
-    return pos != null;
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return false;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Get current position (returns null if permission denied)
+  static Future<Position?> current() async {
+    try {
+      final hasPermission = await requestPermission();
+      if (!hasPermission) return null;
+
+      return Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 🔹 Update User Location in Firestore
+  static Future<void> updateUserLocation(Position position) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'currentLocation': {
+        'lat': position.latitude,
+        'lng': position.longitude,
+        'updatedAt': DateTime.now().toIso8601String(),
+      },
+    });
+  }
+
+  /// 🔹 Get readable address (City, State)
+  static Future<String?> getAddressFromPosition(Position position) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        // e.g. "San Francisco, CA" or "New York"
+        if (place.locality != null && place.administrativeArea != null) {
+          return "${place.locality}, ${place.administrativeArea}";
+        }
+        return place.locality ?? place.administrativeArea ?? "Unknown Location";
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 }
