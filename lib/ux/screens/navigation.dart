@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poke_up/constants/app_styling.dart';
+import 'package:poke_up/services/chat/chat_service.dart';
 
 class Navigation extends StatelessWidget {
   final Widget child;
@@ -50,11 +51,14 @@ class Navigation extends StatelessWidget {
         },
 
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        items: [
+          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          const BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+          BottomNavigationBarItem(icon: _ChatsIcon(), label: 'Chats'),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
         ],
       ),
     );
@@ -68,5 +72,42 @@ class Navigation extends StatelessWidget {
     if (location.startsWith('/app/profile')) return 3;
 
     return 0; // home_feed
+  }
+}
+
+class _ChatsIcon extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: ChatService.unreadConversationsCountStream,
+      builder: (context, snapshot) {
+        final count = snapshot.data ?? 0;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.chat),
+            if (count > 0)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                  child: Text(
+                    count.toString(),
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 }

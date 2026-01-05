@@ -6,6 +6,7 @@ import 'package:poke_up/constants/app_styling.dart';
 import 'package:poke_up/services/location/location_service.dart';
 import 'package:poke_up/services/poke/poke_service.dart';
 import 'package:poke_up/ux/sub_screens/create_poke_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeFeed5 extends StatefulWidget {
   const HomeFeed5({super.key});
@@ -19,6 +20,7 @@ class _HomeFeed5State extends State<HomeFeed5> {
   String? _currentAddress;
   String _selectedFilter = "All";
   bool _isLoadingLocation = false;
+  bool _showNotifications = false;
 
   final List<String> _filters = [
     "All",
@@ -121,6 +123,7 @@ class _HomeFeed5State extends State<HomeFeed5> {
         backgroundColor: AppStyling.primaryColor,
         onPressed: () async {
           if (_currentPosition == null) {
+       
             await _requestLocationAccess();
             return;
           }
@@ -189,22 +192,37 @@ class _HomeFeed5State extends State<HomeFeed5> {
                     ),
                   ),
                   const Spacer(),
-                  Stack(
-                    children: const [
-                      Icon(Icons.notifications_none, size: 28),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: CircleAvatar(
-                          radius: 4,
-                          backgroundColor: Colors.red,
-                        ),
-                      ),
-                    ],
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _showNotifications = !_showNotifications;
+                    }),
+                    child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: _notificationsStream,
+                      builder: (context, snap) {
+                        final hasUnread = (snap.data?.docs ?? []).any(
+                          (d) => (d.data()['read'] as bool?) == false,
+                        );
+                        return Stack(
+                          children: [
+                            const Icon(Icons.notifications_none, size: 28),
+                            if (hasUnread)
+                              const Positioned(
+                                right: 0,
+                                top: 0,
+                                child: CircleAvatar(
+                                  radius: 4,
+                                  backgroundColor: Colors.red,
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
             ),
+            if (_showNotifications) _buildNotificationsPanel(),
             const SizedBox(height: 16),
             // 🔹 Filters
             SizedBox(
@@ -385,6 +403,80 @@ class _HomeFeed5State extends State<HomeFeed5> {
   }
 }
 
+extension on _HomeFeed5State {
+  Stream<QuerySnapshot<Map<String, dynamic>>> get _notificationsStream {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const Stream.empty();
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(uid)
+        .collection('items')
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .snapshots();
+  }
+
+  Widget _buildNotificationsPanel() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(blurRadius: 10, color: Colors.black.withOpacity(0.05)),
+        ],
+      ),
+      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _notificationsStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Text("Error loading notifications");
+          }
+          final docs = snapshot.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return const Text("No notifications");
+          }
+          return ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, i) {
+              final data = docs[i].data();
+              final title = data['title'] as String? ?? '';
+              final body = data['body'] as String? ?? '';
+              final read = data['read'] as bool? ?? false;
+              return ListTile(
+                dense: true,
+                title: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: read ? FontWeight.w500 : FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(body),
+                onTap: () async {
+                  final action = data['action'] as Map<String, dynamic>?;
+                  final docRef = docs[i].reference;
+                  await docRef.update({'read': true});
+                  if (action != null) {
+                    final route = action['route'] as String?;
+                    if (route != null) {
+                      if (mounted) context.push(route);
+                    }
+                  }
+                  setState(() => _showNotifications = false);
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _PokeCard extends StatefulWidget {
   final Map<String, dynamic> poke;
   final Position? currentPosition;
@@ -458,134 +550,138 @@ class _PokeCardState extends State<_PokeCard> {
           }
         }
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundImage: profilePic != null
-                        ? NetworkImage(profilePic)
-                        : null,
-                    backgroundColor: Colors.grey[200],
-                    child: profilePic == null
-                        ? const Icon(Icons.person, color: Colors.grey)
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayAge.isNotEmpty ? "$name, $displayAge" : name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
+
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: profilePic != null
+                          ? NetworkImage(profilePic)
+                          : null,
+                      backgroundColor: Colors.grey[200],
+                      child: profilePic == null
+                          ? const Icon(Icons.person, color: Colors.grey)
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayAge.isNotEmpty ? "$name, $displayAge" : name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          "$category • $timeAgo",
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    if (distanceStr.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppStyling.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          distanceStr,
+                          style: const TextStyle(
+                            color: AppStyling.primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
-                      Text(
-                        "$category • $timeAgo",
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  if (distanceStr.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppStyling.primaryColor.withOpacity(0.1),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(text, style: const TextStyle(fontSize: 14, height: 1.4)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isAlreadyInterested || _isJoining
+                        ? null
+                        : () async {
+                            setState(() => _isJoining = true);
+                            try {
+                              await PokeService.joinPoke(pokeId);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("You joined this poke! 🎉"),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Failed to join: $e")),
+                                );
+                              }
+                            } finally {
+                              if (mounted) setState(() => _isJoining = false);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isAlreadyInterested
+                          ? Colors.green
+                          : Colors.black,
+                      disabledBackgroundColor: Colors.green.withOpacity(0.7),
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        distanceStr,
-                        style: const TextStyle(
-                          color: AppStyling.primaryColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(text, style: const TextStyle(fontSize: 14, height: 1.4)),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isAlreadyInterested || _isJoining
-                      ? null
-                      : () async {
-                          setState(() => _isJoining = true);
-                          try {
-                            await PokeService.joinPoke(pokeId);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("You joined this poke! 🎉"),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Failed to join: $e")),
-                              );
-                            }
-                          } finally {
-                            if (mounted) setState(() => _isJoining = false);
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isAlreadyInterested
-                        ? Colors.green
-                        : Colors.black,
-                    disabledBackgroundColor: Colors.green.withOpacity(0.7),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: _isJoining
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            isAlreadyInterested ? "Joined ✅" : "Join 👋",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
-                  child: _isJoining
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          isAlreadyInterested ? "Joined ✅" : "Join 👋",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

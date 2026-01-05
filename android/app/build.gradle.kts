@@ -31,6 +31,20 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        val envKey: String? = System.getenv("MAPS_API_KEY")
+        val propKey: String? = (project.findProperty("MAPS_API_KEY") as String?)
+        val dotenvFile = rootProject.file(".env")
+        var fileKey: String? = null
+        if (dotenvFile.exists()) {
+            val lines = dotenvFile.readLines()
+            lines.forEach { line ->
+                val trimmed = line.trim()
+                if (trimmed.startsWith("MAPS_API_KEY=")) {
+                    fileKey = trimmed.substringAfter("MAPS_API_KEY=").trim()
+                }
+            }
+        }
+        manifestPlaceholders["MAPS_API_KEY"] = envKey ?: fileKey ?: propKey ?: ""
     }
 
     buildTypes {

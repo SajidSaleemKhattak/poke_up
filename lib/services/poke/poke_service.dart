@@ -17,7 +17,7 @@ class PokeService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
-    await _firestore.collection('pokes').add({
+    final ref = await _firestore.collection('pokes').add({
       'uid': user.uid,
       'text': text.trim(),
       'category': category,
@@ -32,6 +32,19 @@ class PokeService {
 
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    await _addNotification(
+      user.uid,
+      {
+        'type': 'poke_posted',
+        'title': 'Poke posted',
+        'body': 'Your poke was posted successfully',
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+        'action': {'route': '/app/profile'},
+        'pokeId': ref.id,
+      },
+    );
   }
 
   /// 🔹 Join a Poke
@@ -54,6 +67,27 @@ class PokeService {
     await _firestore.collection('pokes').doc(pokeId).update({
       'interestedPeople': FieldValue.arrayUnion([joinerInfo]),
     });
+
+    final pokeSnap = await _firestore.collection('pokes').doc(pokeId).get();
+    final pokeData = pokeSnap.data();
+    final ownerUid = pokeData?['uid'] as String?;
+    final text = pokeData?['text'] as String? ?? '';
+    if (ownerUid != null) {
+      await _addNotification(
+        ownerUid,
+        {
+          'type': 'interest',
+          'title': 'New interest',
+          'body': '${joinerInfo['name']} is interested in your poke',
+          'createdAt': FieldValue.serverTimestamp(),
+          'read': false,
+          'action': {'route': '/app/profile'},
+          'pokeId': pokeId,
+          'actorUid': user.uid,
+          'pokeText': text,
+        },
+      );
+    }
   }
 
   /// 🔹 Match a User
@@ -98,6 +132,21 @@ class PokeService {
     // 2. Create Chat & Send Message
     final chatId = await ChatService.createChat(otherUid, interestedUser);
     await ChatService.sendMessage(chatId, "we matched");
+
+    // 3. Notify the matched user
+    await _addNotification(
+      otherUid,
+      {
+        'type': 'matched',
+        'title': 'You got matched',
+        'body': 'You matched with ${_auth.currentUser?.displayName ?? 'someone'}',
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+        'action': {'route': '/app/conversations'},
+        'pokeId': pokeId,
+        'actorUid': user.uid,
+      },
+    );
   }
 
   /// 🔹 Get stream of my pokes (ordered by time)
@@ -192,5 +241,16 @@ class PokeService {
               .map((doc) => {...doc.data(), 'id': doc.id})
               .toList();
         });
+  }
+
+  static Future<void> _addNotification(
+    String userUid,
+    Map<String, dynamic> payload,
+  ) async {
+    await _firestore
+        .collection('notifications')
+        .doc(userUid)
+        .collection('items')
+        .add(payload);
   }
 }

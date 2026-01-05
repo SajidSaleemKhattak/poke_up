@@ -55,16 +55,18 @@ class ChatService {
         .doc(chatId)
         .collection('messages')
         .add({
-          'senderId': user.uid,
-          'text': text.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-          'read': false,
-        });
+      'senderId': user.uid,
+      'text': text.trim(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'read': false,
+    });
 
     await _firestore.collection('conversations').doc(chatId).update({
       'last_message': text.trim(),
       'last_message_time': FieldValue.serverTimestamp(),
-      'last_read': {user.uid: FieldValue.serverTimestamp()},
+      'last_read': {
+        user.uid: FieldValue.serverTimestamp(),
+      },
     });
   }
 
@@ -87,5 +89,38 @@ class ChatService {
         .collection('messages')
         .orderBy('createdAt', descending: false)
         .snapshots();
+  }
+
+  static Future<void> markConversationRead(String chatId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    await _firestore.collection('conversations').doc(chatId).update({
+      'last_read': {user.uid: FieldValue.serverTimestamp()},
+    });
+  }
+
+  static Stream<int> get unreadConversationsCountStream {
+    final user = _auth.currentUser;
+    if (user == null) return const Stream<int>.empty();
+    return _firestore
+        .collection('conversations')
+        .where('participants', arrayContains: user.uid)
+        .snapshots()
+        .map((snapshot) {
+      int count = 0;
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final Timestamp? lastMsg = data['last_message_time'] as Timestamp?;
+        final Map<String, dynamic>? lastRead =
+            data['last_read'] as Map<String, dynamic>?;
+        Timestamp? myRead = lastRead?[user.uid] as Timestamp?;
+        if (lastMsg != null) {
+          if (myRead == null || lastMsg.compareTo(myRead) > 0) {
+            count++;
+          }
+        }
+      }
+      return count;
+    });
   }
 }

@@ -33,6 +33,12 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    ChatService.markConversationRead(widget.chatId);
+  }
+
   void _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
