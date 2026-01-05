@@ -595,7 +595,7 @@ Widget _tabButton({
           Text(
             title,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: active ? Colors.black : Colors.grey,
             ),
@@ -712,7 +712,7 @@ class _MatchedUserCard extends StatelessWidget {
                     Text(
                       name,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -730,15 +730,10 @@ class _MatchedUserCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.bolt, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     "$pokeText",
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontStyle: FontStyle.italic,
-                    ),
+                    style: const TextStyle(color: Colors.black87, fontSize: 16),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -763,7 +758,7 @@ class _MatchedUserCard extends StatelessWidget {
                   debugPrint("Error opening chat: $e");
                 }
               },
-              icon: const Icon(Icons.chat_bubble_outline, size: 18),
+              icon: const Icon(Icons.chat_bubble_outline, size: 19),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppStyling.primaryColor),
                 shape: RoundedRectangleBorder(
@@ -771,7 +766,10 @@ class _MatchedUserCard extends StatelessWidget {
                 ),
                 foregroundColor: AppStyling.primaryColor,
               ),
-              label: const Text("Message"),
+              label: const Text(
+                "Message",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],

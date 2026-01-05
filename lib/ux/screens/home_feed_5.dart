@@ -683,9 +683,9 @@ class _PokeCardState extends State<_PokeCard> {
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isAlreadyInterested
-                            ? Colors.green
+                            ? AppStyling.primaryColorLight
                             : AppStyling.primaryColor,
-                        disabledBackgroundColor: Colors.green.withOpacity(0.7),
+                        disabledBackgroundColor: AppStyling.primaryColorLight,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),
@@ -701,7 +701,7 @@ class _PokeCardState extends State<_PokeCard> {
                               ),
                             )
                           : Text(
-                              isAlreadyInterested ? "Joined ✅" : "Join 👋",
+                              isAlreadyInterested ? "Joined" : "Join 👋",
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
