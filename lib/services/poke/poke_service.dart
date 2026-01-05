@@ -145,4 +145,52 @@ class PokeService {
               .toList();
         });
   }
+
+  /// 🔹 Get stream of nearby pokes within [radiusKm] of [lat,lng]
+  static Stream<List<Map<String, dynamic>>> nearbyPokesStream({
+    required double lat,
+    required double lng,
+    double radiusKm = 10,
+  }) {
+    final user = _auth.currentUser;
+    if (user == null) return const Stream.empty();
+
+    return _firestore
+        .collection('pokes')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          final now = DateTime.now();
+          final radiusMeters = radiusKm * 1000;
+          return snapshot.docs
+              .where((doc) {
+                final data = doc.data();
+                final uid = data['uid'] as String?;
+                if (uid == user.uid) return false;
+
+                final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+                final validHours = data['validForHours'] as num? ?? 24;
+                if (createdAt == null) return false;
+                final expiresAt = createdAt.add(
+                  Duration(minutes: (validHours * 60).toInt()),
+                );
+                if (now.isAfter(expiresAt)) return false;
+
+                final location = data['location'] as Map<String, dynamic>?;
+                final pLat = (location?['lat'] as num?)?.toDouble();
+                final pLng = (location?['lng'] as num?)?.toDouble();
+                if (pLat == null || pLng == null) return false;
+
+                final distance = Geolocator.distanceBetween(
+                  lat,
+                  lng,
+                  pLat,
+                  pLng,
+                );
+                return distance <= radiusMeters;
+              })
+              .map((doc) => {...doc.data(), 'id': doc.id})
+              .toList();
+        });
+  }
 }

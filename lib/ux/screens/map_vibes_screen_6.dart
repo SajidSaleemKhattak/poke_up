@@ -1,7 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:poke_up/services/poke/poke_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class MapVibesScreen extends StatelessWidget {
+class MapVibesScreen extends StatefulWidget {
   const MapVibesScreen({super.key});
+
+  @override
+  State<MapVibesScreen> createState() => _MapVibesScreenState();
+}
+
+class _MapVibesScreenState extends State<MapVibesScreen> {
+  GoogleMapController? _mapController;
+  Position? _position;
+  bool _locationDenied = false;
+  bool _serviceDisabled = false;
+  double _radiusKm = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _initLocation();
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _serviceDisabled = true;
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _locationDenied = true;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _locationDenied = true;
+        });
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _position = pos;
+        _serviceDisabled = false;
+        _locationDenied = false;
+      });
+    } catch (e) {
+      setState(() {
+        _locationDenied = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -9,8 +74,11 @@ class MapVibesScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF6F6F6),
       body: Stack(
         children: [
-          /// 🔹 Map Placeholder (replace later with GoogleMap)
-          Container(color: const Color(0xFFF2F2F2)),
+          if (_position == null) ...[
+            _buildLocationGate(),
+          ] else ...[
+            _buildGoogleMap(),
+          ],
 
           /// 🔹 Top Controls
           SafeArea(
@@ -26,9 +94,6 @@ class MapVibesScreen extends StatelessWidget {
             ),
           ),
 
-          /// 🔹 Center Pulse Marker
-          Center(child: _pulseMarker()),
-
           /// 🔹 Floating Controls
           Positioned(right: 16, top: 220, child: _zoomControls()),
 
@@ -42,6 +107,96 @@ class MapVibesScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildLocationGate() {
+    final text = _serviceDisabled
+        ? "Turn on Location Services to view nearby pokes"
+        : _locationDenied
+        ? "Allow location permission to show nearby pokes"
+        : "Fetching location...";
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.location_off, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          Text(text, style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 12),
+          if (_serviceDisabled)
+            ElevatedButton(
+              onPressed: () async {
+                await Geolocator.openLocationSettings();
+              },
+              child: const Text("Open Settings"),
+            )
+          else if (_locationDenied)
+            ElevatedButton(
+              onPressed: _initLocation,
+              child: const Text("Retry"),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoogleMap() {
+    final center = LatLng(_position!.latitude, _position!.longitude);
+
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: PokeService.nearbyPokesStream(
+        lat: center.latitude,
+        lng: center.longitude,
+        radiusKm: _radiusKm,
+      ),
+      builder: (context, snapshot) {
+        final markers = <Marker>{};
+        if (snapshot.hasData) {
+          for (final poke in snapshot.data!) {
+            final loc = poke['location'] as Map<String, dynamic>?;
+            final pLat = (loc?['lat'] as num?)?.toDouble();
+            final pLng = (loc?['lng'] as num?)?.toDouble();
+            if (pLat == null || pLng == null) continue;
+            final id = poke['id'] as String? ?? '${pLat}_${pLng}';
+            final text = poke['text'] as String? ?? 'Poke';
+            final category = poke['category'] as String? ?? 'Vibe';
+
+            markers.add(
+              Marker(
+                markerId: MarkerId(id),
+                position: LatLng(pLat, pLng),
+                infoWindow: InfoWindow(
+                  title: category,
+                  snippet: text,
+                  onTap: () => _openExternalNavigation(LatLng(pLat, pLng)),
+                ),
+                icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueAzure,
+                ),
+              ),
+            );
+          }
+        }
+
+        return GoogleMap(
+          initialCameraPosition: CameraPosition(target: center, zoom: 14),
+          myLocationEnabled: true,
+          myLocationButtonEnabled: true,
+          zoomControlsEnabled: false,
+          markers: markers,
+          onMapCreated: (c) => _mapController = c,
+        );
+      },
+    );
+  }
+
+  Future<void> _openExternalNavigation(LatLng dest) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${dest.latitude},${dest.longitude}&travelmode=walking',
+    );
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
+    }
   }
 
   // =========================
@@ -90,53 +245,18 @@ class MapVibesScreen extends StatelessWidget {
     );
   }
 
-  Widget _pulseMarker() {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: const Color(0xFF2EC7F0).withValues(alpha: 0.15),
-      ),
-      child: Center(
-        child: Stack(
-          alignment: Alignment.topRight,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF2EC7F0),
-              ),
-              child: const Icon(Icons.map, color: Colors.white),
-            ),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black,
-              ),
-              child: const Text(
-                "12",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _zoomControls() {
     return Column(
       children: [
-        _circleButton(Icons.add),
+        GestureDetector(
+          onTap: () => _mapController?.animateCamera(CameraUpdate.zoomIn()),
+          child: _circleButton(Icons.add),
+        ),
         const SizedBox(height: 10),
-        _circleButton(Icons.remove),
+        GestureDetector(
+          onTap: () => _mapController?.animateCamera(CameraUpdate.zoomOut()),
+          child: _circleButton(Icons.remove),
+        ),
       ],
     );
   }
@@ -167,10 +287,15 @@ class MapVibesScreen extends StatelessWidget {
         ],
       ),
       child: Row(
-        children: const [
-          Icon(Icons.local_fire_department, color: Colors.orange),
-          SizedBox(width: 8),
-          Text("Downtown Plaza", style: TextStyle(fontWeight: FontWeight.w600)),
+        children: [
+          const Icon(Icons.local_fire_department, color: Colors.orange),
+          const SizedBox(width: 8),
+          Text(
+            _position != null
+                ? "Lat ${_position!.latitude.toStringAsFixed(3)}, Lng ${_position!.longitude.toStringAsFixed(3)}"
+                : "Location",
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -188,11 +313,13 @@ class MapVibesScreen extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.network(
-              "https://images.unsplash.com/photo-1520974735194-6c3d5c1f8f4f",
+            child: Container(
               height: 140,
               width: double.infinity,
-              fit: BoxFit.cover,
+              color: Colors.grey.shade200,
+              child: const Center(
+                child: Icon(Icons.place, color: Colors.grey, size: 40),
+              ),
             ),
           ),
           const SizedBox(height: 12),
