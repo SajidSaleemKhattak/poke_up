@@ -123,7 +123,6 @@ class _HomeFeed5State extends State<HomeFeed5> {
         backgroundColor: AppStyling.primaryColor,
         onPressed: () async {
           if (_currentPosition == null) {
-       
             await _requestLocationAccess();
             return;
           }
@@ -585,11 +584,28 @@ class _PokeCardState extends State<_PokeCard> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          displayAge.isNotEmpty ? "$name, $displayAge" : name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18, // bigger, bold name
+                                  color: Colors.black,
+                                ),
+                              ),
+                              if (displayAge.isNotEmpty)
+                                TextSpan(
+                                  text: ", $displayAge",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight
+                                        .normal, // or w500 if you want a bit of weight
+                                    fontSize: 14, // smaller age
+                                    color: Colors.black,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                         Text(
@@ -597,6 +613,7 @@ class _PokeCardState extends State<_PokeCard> {
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -624,60 +641,73 @@ class _PokeCardState extends State<_PokeCard> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(text, style: const TextStyle(fontSize: 14, height: 1.4)),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isAlreadyInterested || _isJoining
-                        ? null
-                        : () async {
-                            setState(() => _isJoining = true);
-                            try {
-                              await PokeService.joinPoke(pokeId);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("You joined this poke! 🎉"),
-                                  ),
-                                );
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    width: 80.0,
+
+                    child: ElevatedButton(
+                      onPressed: isAlreadyInterested || _isJoining
+                          ? null
+                          : () async {
+                              setState(() => _isJoining = true);
+                              try {
+                                await PokeService.joinPoke(pokeId);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("You joined this poke! 🎉"),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Failed to join: $e"),
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) setState(() => _isJoining = false);
                               }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text("Failed to join: $e")),
-                                );
-                              }
-                            } finally {
-                              if (mounted) setState(() => _isJoining = false);
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isAlreadyInterested
-                          ? Colors.green
-                          : Colors.black,
-                      disabledBackgroundColor: Colors.green.withOpacity(0.7),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isAlreadyInterested
+                            ? Colors.green
+                            : AppStyling.primaryColor,
+                        disabledBackgroundColor: Colors.green.withOpacity(0.7),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: _isJoining
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              isAlreadyInterested ? "Joined ✅" : "Join 👋",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
-                    child: _isJoining
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            isAlreadyInterested ? "Joined ✅" : "Join 👋",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                   ),
                 ),
               ],
