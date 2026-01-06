@@ -46,9 +46,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs your location to show nearby places.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>We track your location in the background for live sharing.</string>
-</dict>
-</plist>
+49→	<key>NSLocationWhenInUseUsageDescription</key>
+50→	<string>This app needs your location to show nearby places.</string>
+51→	<key>NSLocationAlwaysUsageDescription</key>
+52→	<string>We track your location in the background for live sharing.</string>
+53→	<key>NSPhotoLibraryUsageDescription</key>
+54→	<string>This app needs access to your photos to set a profile picture.</string>
+55→	<key>NSCameraUsageDescription</key>
+56→	<string>This app uses the camera to take profile pictures.</string>
+53→</dict>
+54→</plist>

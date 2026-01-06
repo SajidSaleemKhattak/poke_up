@@ -37,34 +37,6 @@ class ConversationsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // 🔹 Who’s Free Now (Static for now)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                "Who's Free Now?",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            SizedBox(
-              height: 100,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: const [
-                  _OnlineAvatar(name: "Mike"),
-                  _OnlineAvatar(name: "Jen"),
-                  _OnlineAvatar(name: "Tariq"),
-                  _OnlineAvatar(name: "Chloe", online: false),
-                  _OnlineAvatar(name: "Sam", online: false),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
             // 🔹 Chats List
             Expanded(
               child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -133,7 +105,8 @@ class ConversationsScreen extends StatelessWidget {
                       final Timestamp? myRead =
                           lastRead?[currentUid] as Timestamp?;
                       final bool isUnread =
-                          ts != null && (myRead == null || ts.compareTo(myRead) > 0);
+                          ts != null &&
+                          (myRead == null || ts.compareTo(myRead) > 0);
 
                       return _ChatTile(
                         name: name,
@@ -143,7 +116,9 @@ class ConversationsScreen extends StatelessWidget {
                         highlighted: isUnread,
                         unread: isUnread,
                         onTap: () {
-                          ChatService.markConversationRead(sortedDocs[index].id);
+                          ChatService.markConversationRead(
+                            sortedDocs[index].id,
+                          );
                           context.push(
                             '/app/chat/${sortedDocs[index].id}',
                             extra: {

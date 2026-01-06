@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:poke_up/services/profile/profile_service.dart';
 import 'package:poke_up/services/poke/poke_service.dart';
 import 'package:poke_up/services/chat/chat_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,6 +18,26 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool showActive = true;
+  Future<bool> _ensureGalleryPermission() async {
+    if (Platform.isIOS || Platform.isMacOS) {
+      final status = await Permission.photos.request();
+      if (status.isGranted) return true;
+      if (status.isPermanentlyDenied) {
+        await openAppSettings();
+      }
+      return false;
+    } else if (Platform.isAndroid) {
+      var status = await Permission.storage.request();
+      if (status.isGranted) return true;
+      status = await Permission.photos.request();
+      if (status.isGranted) return true;
+      if (status.isPermanentlyDenied) {
+        await openAppSettings();
+      }
+      return false;
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,17 +104,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? const Icon(Icons.person, size: 48)
                           : null,
                     ),
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFF2EC7F0),
-                      ),
-                      child: const Icon(
-                        Icons.edit,
-                        size: 18,
-                        color: Colors.white,
+                    GestureDetector(
+                      onTap: () async {
+                        final granted = await _ensureGalleryPermission();
+                        if (!granted) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Gallery permission required to upload photo',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        final pickedFile = await ImagePicker().pickImage(
+                          source: ImageSource.gallery,
+                          maxWidth: 1600,
+                          imageQuality: 88,
+                        );
+                        if (pickedFile == null) return;
+                        final file = File(pickedFile.path);
+                        try {
+                          final url = await ProfileService.uploadProfilePic(
+                            file,
+                          );
+                          await ProfileService.updateProfilePic(url);
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Profile pic updated'),
+                            ),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                        }
+                      },
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFF2EC7F0),
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          size: 18,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
