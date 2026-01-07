@@ -511,12 +511,19 @@ class _PokeCardState extends State<_PokeCard> {
     final locationMap = widget.poke['location'] as Map<String, dynamic>?;
     final createdAt = (widget.poke['createdAt'] as Timestamp?)?.toDate();
     final interestedPeople = widget.poke['interestedPeople'] as List?;
+    final matchedPeople = widget.poke['matchedPeople'] as List?;
 
     final currentUser = FirebaseAuth.instance.currentUser;
     final bool isAlreadyInterested =
         interestedPeople != null &&
         currentUser != null &&
         interestedPeople.any((p) => p['uid'] == currentUser.uid);
+    final bool isMatchedByMe =
+        matchedPeople != null &&
+        currentUser != null &&
+        matchedPeople.any((p) => p['uid'] == currentUser.uid);
+    final bool isMatchedByAnyone =
+        matchedPeople != null && matchedPeople.isNotEmpty;
 
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
@@ -670,7 +677,11 @@ class _PokeCardState extends State<_PokeCard> {
                       width: 80.0,
 
                       child: ElevatedButton(
-                        onPressed: isAlreadyInterested || _isJoining
+                        onPressed:
+                            (isAlreadyInterested ||
+                                isMatchedByMe ||
+                                isMatchedByAnyone ||
+                                _isJoining)
                             ? null
                             : () async {
                                 setState(() => _isJoining = true);
@@ -680,7 +691,7 @@ class _PokeCardState extends State<_PokeCard> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
-                                          "You joined this poke! 🎉",
+                                          "Request sent. Pending approval.",
                                         ),
                                       ),
                                     );
@@ -699,7 +710,10 @@ class _PokeCardState extends State<_PokeCard> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isAlreadyInterested
+                          backgroundColor:
+                              (isAlreadyInterested ||
+                                  isMatchedByMe ||
+                                  isMatchedByAnyone)
                               ? AppStyling.primaryColorLight
                               : AppStyling.primaryColor,
                           disabledBackgroundColor: AppStyling.primaryColorLight,
@@ -718,7 +732,13 @@ class _PokeCardState extends State<_PokeCard> {
                                 ),
                               )
                             : Text(
-                                isAlreadyInterested ? "Joined" : "Join 👋",
+                                isMatchedByMe
+                                    ? "Joined"
+                                    : isAlreadyInterested
+                                    ? "Pending"
+                                    : isMatchedByAnyone
+                                    ? "Matched"
+                                    : "Join 👋",
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,

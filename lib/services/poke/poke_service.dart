@@ -149,6 +149,55 @@ class PokeService {
     );
   }
 
+  /// 🔹 Discard an interested user (reject request)
+  static Future<void> discardUser(
+    String pokeId,
+    Map<String, dynamic> interestedUser,
+  ) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+
+    final otherUid = interestedUser['uid'];
+    final pokeRef = _firestore.collection('pokes').doc(pokeId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(pokeRef);
+      if (!snapshot.exists) throw Exception("Poke not found");
+
+      final data = snapshot.data()!;
+      final interested = List<Map<String, dynamic>>.from(
+        data['interestedPeople'] ?? [],
+      );
+      final discarded = List<Map<String, dynamic>>.from(
+        data['discardedPeople'] ?? [],
+      );
+
+      interested.removeWhere((p) => p['uid'] == otherUid);
+      final discardEntry = Map<String, dynamic>.from(interestedUser);
+      discardEntry['discardedAt'] = DateTime.now().toIso8601String();
+      discarded.add(discardEntry);
+
+      transaction.update(pokeRef, {
+        'interestedPeople': interested,
+        'discardedPeople': discarded,
+      });
+    });
+
+    await _addNotification(
+      otherUid,
+      {
+        'type': 'discarded',
+        'title': 'Request declined',
+        'body': 'Your request was declined',
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+        'action': {'route': '/app/profile'},
+        'pokeId': pokeId,
+        'actorUid': user.uid,
+      },
+    );
+  }
+
   /// 🔹 Get stream of my pokes (ordered by time)
   static Stream<QuerySnapshot<Map<String, dynamic>>> get myPokesStream {
     final user = _auth.currentUser;
@@ -195,6 +244,54 @@ class PokeService {
         });
   }
 
+  /// 🔹 Get stream of my join requests across others' pokes
+  static Stream<List<Map<String, dynamic>>> get myRequestsStream {
+    final user = _auth.currentUser;
+    if (user == null) return const Stream.empty();
+
+    return _firestore
+        .collection('pokes')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      final uid = user.uid;
+      final results = <Map<String, dynamic>>[];
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        // Skip my own pokes
+        if (data['uid'] == uid) continue;
+        final interested = List<Map<String, dynamic>>.from(
+          data['interestedPeople'] ?? [],
+        );
+        final matched = List<Map<String, dynamic>>.from(
+          data['matchedPeople'] ?? [],
+        );
+        final discarded = List<Map<String, dynamic>>.from(
+          data['discardedPeople'] ?? [],
+        );
+        String? status;
+        if (interested.any((p) => p['uid'] == uid)) {
+          status = 'pending';
+        }
+        if (matched.any((p) => p['uid'] == uid)) {
+          status = 'joined';
+        }
+        if (discarded.any((p) => p['uid'] == uid)) {
+          status = 'discarded';
+        }
+        if (status != null) {
+          results.add({
+            'id': doc.id,
+            'text': data['text'],
+            'status': status,
+            'ownerUid': data['uid'],
+            'createdAt': data['createdAt'],
+          });
+        }
+      }
+      return results;
+    });
+  }
   /// 🔹 Get stream of nearby pokes within [radiusKm] of [lat,lng]
   static Stream<List<Map<String, dynamic>>> nearbyPokesStream({
     required double lat,

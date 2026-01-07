@@ -373,6 +373,145 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         active: !showActive,
                         onTap: () => setState(() => showActive = false),
                       ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 30,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) {
+                                return Dialog(
+                                  insetPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  child: SizedBox(
+                                    height: 420,
+                                    child: Column(
+                                      children: [
+                                        const SizedBox(height: 12),
+                                        const Text(
+                                          "My Requests",
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const Divider(),
+                                        Expanded(
+                                          child:
+                                              StreamBuilder<
+                                                List<Map<String, dynamic>>
+                                              >(
+                                                stream: PokeService
+                                                    .myRequestsStream,
+                                                builder: (context, snap) {
+                                                  final items = snap.data ?? [];
+                                                  if (items.isEmpty) {
+                                                    return const Center(
+                                                      child: Text(
+                                                        "No requests yet.",
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                  return ListView.separated(
+                                                    itemCount: items.length,
+                                                    separatorBuilder: (_, __) =>
+                                                        const Divider(),
+                                                    itemBuilder: (c, i) {
+                                                      final it = items[i];
+                                                      final status =
+                                                          (it['status']
+                                                                  as String)
+                                                              .toUpperCase();
+                                                      final text =
+                                                          (it['text']
+                                                              as String?) ??
+                                                          "Poke";
+                                                      return ListTile(
+                                                        title: Text(
+                                                          text,
+                                                          style:
+                                                              const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                        ),
+                                                        trailing: Text(
+                                                          status == 'PENDING'
+                                                              ? 'Pending'
+                                                              : status ==
+                                                                    'JOINED'
+                                                              ? 'Joined'
+                                                              : 'Discarded',
+                                                          style: TextStyle(
+                                                            color:
+                                                                status ==
+                                                                    'PENDING'
+                                                                ? Colors.orange
+                                                                : status ==
+                                                                      'JOINED'
+                                                                ? AppStyling
+                                                                      .primaryColor
+                                                                : Colors.red,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  );
+                                                },
+                                              ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: SizedBox(
+                                            width: double.infinity,
+                                            child: ElevatedButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    AppStyling.primaryColor,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                "Done",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.black12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 0,
+                            ),
+                          ),
+                          child: const Text(
+                            "My Requests",
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -580,36 +719,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       name,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    trailing: ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          await PokeService.matchUser(pokeId, person);
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(this.context).showSnackBar(
-                            SnackBar(
-                              content: Text("You matched with $name! 🎉"),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            try {
+                              await PokeService.matchUser(pokeId, person);
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                SnackBar(
+                                  content: Text("You matched with $name! 🎉"),
+                                ),
+                              );
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                SnackBar(content: Text("Error: $e")),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppStyling.primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          );
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(
-                            this.context,
-                          ).showSnackBar(SnackBar(content: Text("Error: $e")));
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppStyling.primaryColor,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                          child: const Text("Allow"),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () async {
+                            try {
+                              await PokeService.discardUser(pokeId, person);
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Request discarded"),
+                                ),
+                              );
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                SnackBar(content: Text("Error: $e")),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey.shade200,
+                            foregroundColor: Colors.black,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                          child: const Text("Discard"),
                         ),
-                      ),
-                      child: const Text("Allow"),
+                      ],
                     ),
                   );
                 },
