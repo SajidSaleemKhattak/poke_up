@@ -78,6 +78,23 @@ class Navigation extends StatelessWidget {
 class _ChatsIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Icon(Icons.chat);
+    return StreamBuilder<int>(
+      stream: ChatService.unreadConversationsCountStream,
+      builder: (context, snapshot) {
+        final count = snapshot.data ?? 0;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.chat),
+            if (count > 0)
+              const Positioned(
+                right: -1,
+                top: -1,
+                child: CircleAvatar(radius: 4, backgroundColor: Colors.red),
+              ),
+          ],
+        );
+      },
+    );
   }
 }
