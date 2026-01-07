@@ -61,7 +61,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
-                      const Icon(Icons.arrow_back),
                       const Spacer(),
                       const Text(
                         "My Profile",

@@ -44,7 +44,6 @@ class _InterestSelection4State extends State<InterestSelection4> {
                     // 🔹 Header
                     Row(
                       children: const [
-                        Icon(Icons.arrow_back_ios_new),
                         Spacer(),
                         Text(
                           "ONBOARDING",

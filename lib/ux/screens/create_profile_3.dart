@@ -48,7 +48,6 @@ class _CreateProfile3State extends State<CreateProfile3> {
                 /*  ===  EVERYTHING YOU ALREADY HAD  ===  */
                 Row(
                   children: [
-                    const Icon(Icons.arrow_back_ios_new),
                     const Spacer(),
                     Text(
                       "Step $completedSteps of 3",
