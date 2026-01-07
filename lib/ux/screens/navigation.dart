@@ -68,7 +68,7 @@ class Navigation extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.toString();
 
     if (location.startsWith('/app/map')) return 1;
-    if (location.startsWith('/app/convesations')) return 2;
+    if (location.startsWith('/app/conversations')) return 2;
     if (location.startsWith('/app/profile')) return 3;
 
     return 0; // home_feed
@@ -78,36 +78,6 @@ class Navigation extends StatelessWidget {
 class _ChatsIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<int>(
-      stream: ChatService.unreadConversationsCountStream,
-      builder: (context, snapshot) {
-        final count = snapshot.data ?? 0;
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const Icon(Icons.chat),
-            if (count > 0)
-              Positioned(
-                right: -2,
-                top: -2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  child: Text(
-                    count.toString(),
-                    style: const TextStyle(color: Colors.white, fontSize: 10),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
+    return const Icon(Icons.chat);
   }
 }

@@ -81,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const Spacer(),
                       GestureDetector(
-                        onTap: () => context.push('/app/profile/settings'),
+                        onTap: () => context.push('/settings'),
                         child: const Icon(Icons.settings),
                       ),
                     ],

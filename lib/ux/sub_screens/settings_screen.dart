@@ -59,7 +59,7 @@ class SettingsScreen extends StatelessWidget {
               icon: Icons.verified_user_outlined,
               title: "Community Guidelines",
               trailing: Icons.open_in_new,
-              onTap: () => context.push("/app/profile/community_guideline"),
+              onTap: () => context.push("/community_guideline"),
             ),
 
             const Spacer(),

@@ -255,7 +255,7 @@ class _HomeFeed5State extends State<HomeFeed5> {
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 0),
             // 🔹 Feed or Location Prompt
             Expanded(
               child: _currentPosition == null
@@ -381,10 +381,10 @@ class _HomeFeed5State extends State<HomeFeed5> {
                         }
 
                         return ListView.separated(
-                          padding: const EdgeInsets.only(bottom: 80),
+                          padding: const EdgeInsets.only(bottom: 0),
                           itemCount: filteredPokes.length,
                           separatorBuilder: (_, __) =>
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 0),
                           itemBuilder: (context, index) {
                             return _PokeCard(
                               poke: filteredPokes[index],
@@ -549,168 +549,173 @@ class _PokeCardState extends State<_PokeCard> {
           }
         }
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
-
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundImage: profilePic != null
-                          ? NetworkImage(profilePic)
-                          : null,
-                      backgroundColor: Colors.grey[200],
-                      child: profilePic == null
-                          ? const Icon(Icons.person, color: Colors.grey)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18, // bigger, bold name
-                                  color: Colors.black,
-                                ),
-                              ),
-                              if (displayAge.isNotEmpty)
+        return Container(
+          margin: EdgeInsets.fromLTRB(0, 25, 0, 0),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+            child: Container(
+              // margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: profilePic != null
+                            ? NetworkImage(profilePic)
+                            : null,
+                        backgroundColor: Colors.grey[200],
+                        child: profilePic == null
+                            ? const Icon(Icons.person, color: Colors.grey)
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              children: [
                                 TextSpan(
-                                  text: ", $displayAge",
+                                  text: name,
                                   style: const TextStyle(
-                                    fontWeight: FontWeight
-                                        .normal, // or w500 if you want a bit of weight
-                                    fontSize: 14, // smaller age
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18, // bigger, bold name
                                     color: Colors.black,
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          "$category • $timeAgo",
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    if (distanceStr.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppStyling.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          distanceStr,
-                          style: const TextStyle(
-                            color: AppStyling.primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    height: 1.4,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: SizedBox(
-                    width: 80.0,
-
-                    child: ElevatedButton(
-                      onPressed: isAlreadyInterested || _isJoining
-                          ? null
-                          : () async {
-                              setState(() => _isJoining = true);
-                              try {
-                                await PokeService.joinPoke(pokeId);
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("You joined this poke! 🎉"),
+                                if (displayAge.isNotEmpty)
+                                  TextSpan(
+                                    text: ", $displayAge",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight
+                                          .normal, // or w500 if you want a bit of weight
+                                      fontSize: 14, // smaller age
+                                      color: Colors.black,
                                     ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text("Failed to join: $e"),
-                                    ),
-                                  );
-                                }
-                              } finally {
-                                if (mounted) setState(() => _isJoining = false);
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isAlreadyInterested
-                            ? AppStyling.primaryColorLight
-                            : AppStyling.primaryColor,
-                        disabledBackgroundColor: AppStyling.primaryColorLight,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: _isJoining
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              isAlreadyInterested ? "Joined" : "Join 👋",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
+                                  ),
+                              ],
                             ),
+                          ),
+                          Text(
+                            "$category • $timeAgo",
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      if (distanceStr.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppStyling.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            distanceStr,
+                            style: const TextStyle(
+                              color: AppStyling.primaryColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      width: 80.0,
+
+                      child: ElevatedButton(
+                        onPressed: isAlreadyInterested || _isJoining
+                            ? null
+                            : () async {
+                                setState(() => _isJoining = true);
+                                try {
+                                  await PokeService.joinPoke(pokeId);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "You joined this poke! 🎉",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Failed to join: $e"),
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted)
+                                    setState(() => _isJoining = false);
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isAlreadyInterested
+                              ? AppStyling.primaryColorLight
+                              : AppStyling.primaryColor,
+                          disabledBackgroundColor: AppStyling.primaryColorLight,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: _isJoining
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                isAlreadyInterested ? "Joined" : "Join 👋",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

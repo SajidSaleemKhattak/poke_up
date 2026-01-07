@@ -142,18 +142,23 @@ class MyAppRouter {
             builder: (context, state) => const ProfileScreen(),
             routes: [
               GoRoute(
-                name: 'settings',
+                name: 'settings_in_shell',
                 path: 'settings',
                 builder: (context, state) => const SettingsScreen(),
-              ),
-              GoRoute(
-                name: 'community_guidelines',
-                path: 'community_guideline',
-                builder: (context, state) => const CommunityGuidelinesScreen(),
               ),
             ],
           ),
         ],
+      ),
+      GoRoute(
+        name: 'settings',
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        name: 'community_guidelines',
+        path: '/community_guideline',
+        builder: (context, state) => const CommunityGuidelinesScreen(),
       ),
       GoRoute(
         name: 'chat',

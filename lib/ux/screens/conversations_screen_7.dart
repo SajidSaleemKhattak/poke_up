@@ -100,21 +100,14 @@ class ConversationsScreen extends StatelessWidget {
                       final time = ts != null
                           ? timeago.format(ts.toDate(), locale: 'en_short')
                           : '';
-                      final Map<String, dynamic>? lastRead =
-                          data['last_read'] as Map<String, dynamic>?;
-                      final Timestamp? myRead =
-                          lastRead?[currentUid] as Timestamp?;
-                      final bool isUnread =
-                          ts != null &&
-                          (myRead == null || ts.compareTo(myRead) > 0);
 
                       return _ChatTile(
                         name: name,
                         message: lastMessage,
                         time: time,
                         profilePic: profilePic,
-                        highlighted: isUnread,
-                        unread: isUnread,
+                        highlighted: false,
+                        unread: false,
                         onTap: () {
                           ChatService.markConversationRead(
                             sortedDocs[index].id,
@@ -265,17 +258,6 @@ class _ChatTile extends StatelessWidget {
                         : Colors.grey.shade500,
                   ),
                 ),
-                if (unread) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF2EC7F0),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
               ],
             ),
           ],
