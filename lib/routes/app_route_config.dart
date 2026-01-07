@@ -22,6 +22,7 @@ import 'package:poke_up/ux/sub_screens/chat_screen.dart';
 
 import 'package:poke_up/ux/sub_screens/settings_screen.dart';
 import 'package:poke_up/ux/sub_screens/community_guideline_screen.dart';
+import 'package:poke_up/ux/sub_screens/notifications_screen.dart';
 
 import 'package:poke_up/ux/screens/Navigation.dart';
 
@@ -154,6 +155,11 @@ class MyAppRouter {
         name: 'settings',
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        name: 'notifications',
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
         name: 'community_guidelines',

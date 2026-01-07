@@ -192,9 +192,9 @@ class _HomeFeed5State extends State<HomeFeed5> {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => setState(() {
-                      _showNotifications = !_showNotifications;
-                    }),
+                    onTap: () {
+                      context.push('/notifications');
+                    },
                     child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                       stream: _notificationsStream,
                       builder: (context, snap) {
@@ -221,7 +221,7 @@ class _HomeFeed5State extends State<HomeFeed5> {
                 ],
               ),
             ),
-            if (_showNotifications) _buildNotificationsPanel(),
+
             const SizedBox(height: 16),
             // 🔹 Filters
             SizedBox(
