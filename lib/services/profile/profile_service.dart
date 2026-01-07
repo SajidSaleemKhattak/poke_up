@@ -16,12 +16,12 @@ class ProfileService {
   /// Step 1: Basic profile (CreateProfile3)
   static Future<void> updateBasicProfile({
     required String firstName,
-    required String ageRange,
+    required int age,
     String? profilePicUrl,
   }) async {
     await _firestore.collection('users').doc(_uid).update({
       'firstName': firstName,
-      'ageRange': ageRange,
+      'age': age,
       if (profilePicUrl != null) 'profilePic': profilePicUrl,
     });
   }
@@ -36,7 +36,7 @@ class ProfileService {
 
   /// Used by router / guards
   static bool isBasicProfileComplete(Map<String, dynamic> data) {
-    return data['firstName'] != null && data['ageRange'] != null;
+    return data['firstName'] != null && data['age'] != null;
   }
 
   static bool isOnboardingComplete(Map<String, dynamic> data) {
@@ -59,8 +59,9 @@ class ProfileService {
   static Future<String> uploadProfilePic(File file) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
-    final ref = FirebaseStorage.instance
-        .ref('profile_pics/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    final ref = FirebaseStorage.instance.ref(
+      'profile_pics/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
     await ref.putFile(file);
     return ref.getDownloadURL();
   }

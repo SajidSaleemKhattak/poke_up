@@ -2,6 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:poke_up/services/profile/profile_service.dart';
 
 class CreateProfile3 extends StatefulWidget {
@@ -15,13 +18,14 @@ class _CreateProfile3State extends State<CreateProfile3> {
   // ---- State ----
   bool photoAdded = false;
   String firstName = '';
-  String? selectedAge;
+  int? age;
+  String? localProfilePic;
 
   int get completedSteps {
     int count = 0;
     if (photoAdded) count++;
     if (firstName.isNotEmpty) count++;
-    if (selectedAge != null) count++;
+    if (age != null) count++;
     return count;
   }
 
@@ -83,24 +87,31 @@ class _CreateProfile3State extends State<CreateProfile3> {
                     Stack(
                       alignment: Alignment.bottomRight,
                       children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey.shade200,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            size: 48,
-                            color: Colors.grey,
-                          ),
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.grey.shade200,
+                          backgroundImage: localProfilePic != null
+                              ? FileImage(File(localProfilePic!))
+                              : (FirebaseAuth.instance.currentUser?.photoURL != null
+                                  ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
+                                  : null) as ImageProvider<Object>?,
+                          child: localProfilePic == null &&
+                                  FirebaseAuth.instance.currentUser?.photoURL == null
+                              ? const Icon(Icons.person, size: 48, color: Colors.grey)
+                              : null,
                         ),
                         GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              photoAdded = !photoAdded;
-                            });
+                          onTap: () async {
+                            final picker = ImagePicker();
+                            final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1024);
+                            if (picked != null) {
+                              setState(() {
+                                localProfilePic = picked.path;
+                                photoAdded = true;
+                              });
+                              final url = await ProfileService.uploadProfilePic(File(picked.path));
+                              await ProfileService.updateProfilePic(url);
+                            }
                           },
                           child: Container(
                             width: 38,
@@ -169,22 +180,38 @@ class _CreateProfile3State extends State<CreateProfile3> {
 
               const SizedBox(height: 32),
 
-              // 🔹 Age Range
               const Text(
-                "Age Range",
+                "Age",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
 
               const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  _ageChip("18–20"),
-                  const SizedBox(width: 12),
-                  _ageChip("21–24"),
-                  const SizedBox(width: 12),
-                  _ageChip("25+"),
-                ],
+              Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  color: Colors.grey.shade200,
+                ),
+                child: TextField(
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final v = int.tryParse(value);
+                    setState(() {
+                      if (v != null && v >= 18 && v < 60) {
+                        age = v;
+                      } else {
+                        age = null;
+                      }
+                    });
+                  },
+                  decoration: const InputDecoration(
+                    hintText: "Enter your age (18–59)",
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Colors.black54),
+                  ),
+                ),
               ),
 
               const Spacer(),
@@ -199,7 +226,7 @@ class _CreateProfile3State extends State<CreateProfile3> {
                           try {
                             await ProfileService.updateBasicProfile(
                               firstName: firstName,
-                              ageRange: selectedAge!,
+                              age: age!,
                             );
 
                             context.goNamed("interest_selection");
@@ -246,37 +273,7 @@ class _CreateProfile3State extends State<CreateProfile3> {
     );
   }
 
-  // 🔹 Age chip widget
-  Widget _ageChip(String label) {
-    final bool isSelected = selectedAge == label;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedAge = label;
-          });
-        },
-        child: Container(
-          height: 50,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            color: isSelected ? const Color(0xFF2EC7F0) : Colors.grey.shade200,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.black54,
-                fontSize: 16.0,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  
 }
 
 /// ===============================

@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:poke_up/services/auth/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool showPersonal = false;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _interestsController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    _interestsController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,18 +55,98 @@ class SettingsScreen extends StatelessWidget {
             _SettingsTile(
               icon: Icons.person_outline,
               title: "Personal Information",
-              onTap: () {},
+              onTap: () {
+                setState(() {
+                  showPersonal = !showPersonal;
+                });
+              },
             ),
-            _SettingsTile(
-              icon: Icons.lock_outline,
-              title: "Change Password",
-              onTap: () {},
-            ),
-            _SettingsTile(
-              icon: Icons.business_center_outlined,
-              title: "Change into Business Account",
-              onTap: () {},
-            ),
+            if (showPersonal)
+              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser?.uid)
+                    .snapshots(),
+                builder: (context, snap) {
+                  final data = snap.data?.data();
+                  if (data != null) {
+                    _nameController.text = data['firstName'] ?? '';
+                    _ageController.text =
+                        (data['age'] as num?)?.toInt().toString() ?? '';
+                    final interests = (data['interests'] as List?) ?? [];
+                    _interestsController.text = interests
+                        .map((e) => e.toString())
+                        .join(', ');
+                  }
+                  return Column(
+                    children: [
+                      const SizedBox(height: 12),
+                      _editableField(
+                        "First Name",
+                        _nameController,
+                        keyboardType: TextInputType.name,
+                      ),
+                      const SizedBox(height: 12),
+                      _editableField(
+                        "Age",
+                        _ageController,
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 12),
+                      _editableField(
+                        "Interests (comma separated)",
+                        _interestsController,
+                        keyboardType: TextInputType.text,
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final name = _nameController.text.trim();
+                            final age = int.tryParse(
+                              _ageController.text.trim(),
+                            );
+                            final interests = _interestsController.text
+                                .split(',')
+                                .map((e) => e.trim())
+                                .where((e) => e.isNotEmpty)
+                                .toList();
+                            if (name.isEmpty || age == null) return;
+                            final uid = FirebaseAuth.instance.currentUser?.uid;
+                            if (uid == null) return;
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(uid)
+                                .update({
+                                  'firstName': name,
+                                  'age': age,
+                                  'interests': interests,
+                                });
+                            setState(() {
+                              showPersonal = false;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2EC7F0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: const Text(
+                            "Save",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
 
             const SizedBox(height: 24),
 
@@ -63,43 +162,6 @@ class SettingsScreen extends StatelessWidget {
             ),
 
             const Spacer(),
-
-            // Sign Out Button
-            Container(
-              width: double.infinity,
-              height: 52,
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: TextButton(
-                onPressed: () async {
-                  await AuthService.signOut();
-                  // Router redirect will handle navigation to login
-                },
-                child: const Text(
-                  "Sign Out",
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Delete Account
-            Center(
-              child: TextButton(
-                onPressed: () {},
-                child: const Text(
-                  "Delete Account",
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-              ),
-            ),
 
             const SizedBox(height: 12),
 
@@ -139,6 +201,44 @@ class _SectionTitle extends StatelessWidget {
       ),
     );
   }
+}
+
+class _EditableFieldWrapper extends StatelessWidget {
+  final Widget child;
+  const _EditableFieldWrapper({required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: child,
+    );
+  }
+}
+
+Widget _editableField(
+  String label,
+  TextEditingController controller, {
+  TextInputType? keyboardType,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+      const SizedBox(height: 8),
+      _EditableFieldWrapper(
+        child: TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          decoration: const InputDecoration(border: InputBorder.none),
+        ),
+      ),
+    ],
+  );
 }
 
 /// ===============================
