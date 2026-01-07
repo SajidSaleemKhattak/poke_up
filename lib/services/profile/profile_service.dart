@@ -60,10 +60,12 @@ class ProfileService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
     final ref = FirebaseStorage.instance.ref(
-      'profile_pics/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      'profile_pics/${user.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg',
     );
-    await ref.putFile(file);
-    return ref.getDownloadURL();
+    final metadata = SettableMetadata(contentType: 'image/jpeg');
+    final snapshot = await ref.putFile(file, metadata);
+    final url = await snapshot.ref.getDownloadURL();
+    return url;
   }
 
   static Future<void> updateProfilePic(String url) async {
