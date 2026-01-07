@@ -7,6 +7,7 @@ import 'package:poke_up/services/location/location_service.dart';
 import 'package:poke_up/services/poke/poke_service.dart';
 import 'package:poke_up/ux/sub_screens/create_poke_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poke_up/services/profile/profile_service.dart';
 
 class HomeFeed5 extends StatefulWidget {
   const HomeFeed5({super.key});
@@ -146,10 +147,22 @@ class _HomeFeed5State extends State<HomeFeed5> {
               padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.grey,
-                    child: Icon(Icons.person, color: Colors.white),
+                  StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    stream: ProfileService.myProfileStream,
+                    builder: (context, snap) {
+                      final data = snap.data?.data();
+                      final profilePic = data?['profilePic'] as String?;
+                      return CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.grey,
+                        backgroundImage: profilePic != null
+                            ? NetworkImage(profilePic)
+                            : null,
+                        child: profilePic == null
+                            ? const Icon(Icons.person, color: Colors.white)
+                            : null,
+                      );
+                    },
                   ),
                   const SizedBox(width: 12),
                   GestureDetector(

@@ -16,6 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final Set<String> _selectedInterests = {};
+  bool _personalLoaded = false;
 
   @override
   void dispose() {
@@ -41,7 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
 
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,6 +59,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {
                 setState(() {
                   showPersonal = !showPersonal;
+                  if (showPersonal) {
+                    _personalLoaded = false;
+                  }
                 });
               },
             ),
@@ -69,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     .snapshots(),
                 builder: (context, snap) {
                   final data = snap.data?.data();
-                  if (data != null) {
+                  if (data != null && !_personalLoaded) {
                     _nameController.text = data['firstName'] ?? '';
                     _ageController.text =
                         (data['age'] as num?)?.toInt().toString() ?? '';
@@ -77,6 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _selectedInterests
                       ..clear()
                       ..addAll(interests.map((e) => e.toString()));
+                    _personalLoaded = true;
                   }
                   return Column(
                     children: [
@@ -120,42 +125,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 8),
                         _chipsSection(this),
                         const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 44,
-                          child: ElevatedButton(
-                            onPressed: _selectedInterests.length >= 5
-                                ? () async {
-                                    final uid =
-                                        FirebaseAuth.instance.currentUser?.uid;
-                                    if (uid == null) return;
-                                    await FirebaseFirestore.instance
-                                        .collection('users')
-                                        .doc(uid)
-                                        .update({
-                                          'interests': _selectedInterests
-                                              .toList(),
-                                        });
-                                    setState(() {
-                                      showInterestsEditor = false;
-                                    });
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2EC7F0),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: const Text(
-                              "Submit Interests",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                       const SizedBox(height: 12),
                       SizedBox(
@@ -168,14 +137,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               _ageController.text.trim(),
                             );
                             if (name.isEmpty || age == null) return;
+                            if (_selectedInterests.length < 5) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Select at least 5 interests'),
+                                ),
+                              );
+                              return;
+                            }
                             final uid = FirebaseAuth.instance.currentUser?.uid;
                             if (uid == null) return;
                             await FirebaseFirestore.instance
                                 .collection('users')
                                 .doc(uid)
-                                .update({'firstName': name, 'age': age});
+                                .update({
+                                  'firstName': name,
+                                  'age': age,
+                                  'interests': _selectedInterests.toList(),
+                                });
                             setState(() {
                               showPersonal = false;
+                              showInterestsEditor = false;
                             });
                           },
                           style: ElevatedButton.styleFrom(
@@ -211,9 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () => context.push("/community_guideline"),
             ),
 
-            const Spacer(),
-
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
             // Version
             const Center(
