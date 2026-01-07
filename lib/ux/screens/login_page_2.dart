@@ -16,6 +16,7 @@ class LoginPage2 extends StatefulWidget {
 class _LoginPage2State extends State<LoginPage2> {
   final _formKey = GlobalKey<FormState>();
   bool _isSignup = true;
+  bool _isGoogleLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -229,16 +230,25 @@ class _LoginPage2State extends State<LoginPage2> {
                         children: [
                           GestureDetector(
                             onTap: () async {
+                              if (_isGoogleLoading) return;
+                              setState(() => _isGoogleLoading = true);
                               try {
-                                await AuthService.signInWithGoogle();
-                                // Router handles navigation automatically
+                                final cred =
+                                    await AuthService.signInWithGoogle();
+                                if (cred?.user != null) {
+                                  // Navigate to next step; router may further redirect if complete
+                                  if (mounted) context.go('/create_profile');
+                                }
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Sign in failed"),
+                                  SnackBar(
+                                    content: Text("Sign in failed: $e"),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
+                              } finally {
+                                if (mounted)
+                                  setState(() => _isGoogleLoading = false);
                               }
                             },
                             child: Container(
@@ -259,10 +269,18 @@ class _LoginPage2State extends State<LoginPage2> {
                               padding: const EdgeInsets.all(
                                 15,
                               ), // space around icon
-                              child: Image.asset(
-                                "assets/images/Google_icon.png",
-                                fit: BoxFit.contain,
-                              ),
+                              child: _isGoogleLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Image.asset(
+                                      "assets/images/Google_icon.png",
+                                      fit: BoxFit.contain,
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 20),

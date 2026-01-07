@@ -57,11 +57,11 @@ class AuthService {
                 'uid': userCredential.user!.uid,
                 'createdAt': FieldValue.serverTimestamp(),
                 'firstName': null,
-                'ageRange': null,
+                'age': null,
                 'interests': [],
                 'currentLocation': null, // 📍 New field for location gating
                 'lastName': null,
-                'profilePicture': userCredential.user!.photoURL,
+                'profilePic': userCredential.user!.photoURL,
               });
         }
       }
