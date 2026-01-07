@@ -17,6 +17,9 @@ class _LoginPage2State extends State<LoginPage2> {
   final _formKey = GlobalKey<FormState>();
   bool _isSignup = true;
   bool _isGoogleLoading = false;
+  bool _isEmailLoading = false;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +143,7 @@ class _LoginPage2State extends State<LoginPage2> {
                             _inputField(
                               hint: "Enter your email or phone",
                               icon: Icons.email_outlined,
+                              controller: _emailController,
                             ),
 
                             const SizedBox(height: 20),
@@ -158,6 +162,7 @@ class _LoginPage2State extends State<LoginPage2> {
                               icon: Icons.lock_outline,
                               suffix: Icons.visibility_off_outlined,
                               obscure: true,
+                              controller: _passwordController,
                             ),
                           ],
                         ),
@@ -170,8 +175,45 @@ class _LoginPage2State extends State<LoginPage2> {
                         width: double.infinity,
                         height: 54,
                         child: ElevatedButton(
-                          onPressed: () {
-                            context.goNamed("create_profile");
+                          onPressed: () async {
+                            if (_isEmailLoading) return;
+                            setState(() => _isEmailLoading = true);
+                            try {
+                              final email = _emailController.text.trim();
+                              final password = _passwordController.text;
+                              if (email.isEmpty || password.length < 6) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Enter valid email and password (6+ chars)",
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (_isSignup) {
+                                await AuthService.signUpWithEmail(
+                                  email,
+                                  password,
+                                );
+                              } else {
+                                await AuthService.signInWithEmail(
+                                  email,
+                                  password,
+                                );
+                              }
+                              if (mounted) context.go('/create_profile');
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Auth failed: $e"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } finally {
+                              if (mounted)
+                                setState(() => _isEmailLoading = false);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppStyling.primaryColor,
@@ -182,6 +224,7 @@ class _LoginPage2State extends State<LoginPage2> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: const [
+                              // Simple text; spinner is shown via Google button; for email we keep CTA instant
                               Text(
                                 "Let's Go",
                                 style: TextStyle(
@@ -347,6 +390,7 @@ class _LoginPage2State extends State<LoginPage2> {
     required IconData icon,
     IconData? suffix,
     bool obscure = false,
+    TextEditingController? controller,
   }) {
     return Container(
       height: 56,
@@ -362,6 +406,7 @@ class _LoginPage2State extends State<LoginPage2> {
           Expanded(
             child: TextField(
               obscureText: obscure,
+              controller: controller,
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: const TextStyle(

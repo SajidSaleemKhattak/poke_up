@@ -12,15 +12,15 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool showPersonal = false;
+  bool showInterestsEditor = false;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
-  final TextEditingController _interestsController = TextEditingController();
+  final Set<String> _selectedInterests = {};
 
   @override
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();
-    _interestsController.dispose();
     super.dispose();
   }
 
@@ -74,9 +74,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _ageController.text =
                         (data['age'] as num?)?.toInt().toString() ?? '';
                     final interests = (data['interests'] as List?) ?? [];
-                    _interestsController.text = interests
-                        .map((e) => e.toString())
-                        .join(', ');
+                    _selectedInterests
+                      ..clear()
+                      ..addAll(interests.map((e) => e.toString()));
                   }
                   return Column(
                     children: [
@@ -93,11 +93,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 12),
-                      _editableField(
-                        "Interests (comma separated)",
-                        _interestsController,
-                        keyboardType: TextInputType.text,
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              showInterestsEditor = !showInterestsEditor;
+                            });
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: const Text(
+                            "Change Interests",
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      if (showInterestsEditor) ...[
+                        const _SectionTitle(title: "INTERESTS"),
+                        const SizedBox(height: 8),
+                        _chipsSection(this),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: ElevatedButton(
+                            onPressed: _selectedInterests.length >= 5
+                                ? () async {
+                                    final uid =
+                                        FirebaseAuth.instance.currentUser?.uid;
+                                    if (uid == null) return;
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(uid)
+                                        .update({
+                                          'interests': _selectedInterests
+                                              .toList(),
+                                        });
+                                    setState(() {
+                                      showInterestsEditor = false;
+                                    });
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2EC7F0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            child: const Text(
+                              "Submit Interests",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
@@ -108,22 +167,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             final age = int.tryParse(
                               _ageController.text.trim(),
                             );
-                            final interests = _interestsController.text
-                                .split(',')
-                                .map((e) => e.trim())
-                                .where((e) => e.isNotEmpty)
-                                .toList();
                             if (name.isEmpty || age == null) return;
                             final uid = FirebaseAuth.instance.currentUser?.uid;
                             if (uid == null) return;
                             await FirebaseFirestore.instance
                                 .collection('users')
                                 .doc(uid)
-                                .update({
-                                  'firstName': name,
-                                  'age': age,
-                                  'interests': interests,
-                                });
+                                .update({'firstName': name, 'age': age});
                             setState(() {
                               showPersonal = false;
                             });
@@ -237,6 +287,99 @@ Widget _editableField(
           decoration: const InputDecoration(border: InputBorder.none),
         ),
       ),
+    ],
+  );
+}
+
+// Interest chips UI section (styled similar to InterestSelection4)
+Widget _chipsSection(_SettingsScreenState state) {
+  Widget chipsWrap(List<String> items) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: items.map((item) {
+        final bool isSelected = state._selectedInterests.contains(item);
+        return GestureDetector(
+          onTap: () {
+            state.setState(() {
+              if (isSelected) {
+                state._selectedInterests.remove(item);
+              } else {
+                state._selectedInterests.add(item);
+              }
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              color: isSelected ? const Color(0xFF2EC7F0) : Colors.white,
+              border: Border.all(
+                color: isSelected
+                    ? const Color(0xFF2EC7F0)
+                    : Colors.grey.shade300,
+              ),
+            ),
+            child: Text(
+              item,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : Colors.black,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      chipsWrap([
+        "🌮 Tacos",
+        "☕ Coffee Runs",
+        "🍣 Sushi",
+        "🍕 Late Night Pizza",
+        "🧋 Boba Tea",
+        "🥐 Brunch",
+      ]),
+      const SizedBox(height: 16),
+      chipsWrap([
+        "🎬 Movie Night",
+        "🎮 Gaming",
+        "🚶‍♀️ Hot Girl Walk",
+        "🍹 Rooftop Drinks",
+        "📖 Book Time",
+        "😌 Just Chilling",
+      ]),
+      const SizedBox(height: 16),
+      chipsWrap([
+        "🏋️ Gym",
+        "🧘 Yoga",
+        "🏃 Running",
+        "🥗 Healthy Eating",
+        "🧠 Mental Health",
+        "🛌 Self Care",
+      ]),
+      const SizedBox(height: 16),
+      chipsWrap([
+        "⚽ Football",
+        "🏀 Basketball",
+        "🎾 Tennis",
+        "🏏 Cricket",
+        "🏓 Table Tennis",
+        "🏐 Volleyball",
+      ]),
+      const SizedBox(height: 16),
+      chipsWrap([
+        "🎵 Music",
+        "📸 Photography",
+        "🎬 Filmmaking",
+        "✍️ Writing",
+        "🖌️ Painting",
+        "🎭 Theatre",
+      ]),
     ],
   );
 }

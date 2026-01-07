@@ -77,4 +77,42 @@ class AuthService {
     await _googleSignIn.signOut(); // clears account chooser cache
     await _auth.signOut(); // Firebase logout
   }
+
+  static Future<UserCredential> signUpWithEmail(
+    String email,
+    String password,
+  ) async {
+    final cred = await _auth.createUserWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
+    final user = cred.user;
+    if (user != null) {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'email': user.email,
+          'uid': user.uid,
+          'createdAt': FieldValue.serverTimestamp(),
+          'firstName': null,
+          'age': null,
+          'interests': [],
+          'currentLocation': null,
+          'lastName': null,
+          'profilePic': user.photoURL,
+        });
+      }
+    }
+    return cred;
+  }
+
+  static Future<UserCredential> signInWithEmail(
+    String email,
+    String password,
+  ) async {
+    return _auth.signInWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
+  }
 }

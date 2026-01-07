@@ -26,15 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await openAppSettings();
       }
       return false;
-    } else if (Platform.isAndroid) {
-      var status = await Permission.storage.request();
-      if (status.isGranted) return true;
-      status = await Permission.photos.request();
-      if (status.isGranted) return true;
-      if (status.isPermanentlyDenied) {
-        await openAppSettings();
-      }
-      return false;
     }
     return true;
   }
@@ -94,15 +85,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Stack(
                   alignment: Alignment.bottomRight,
                   children: [
-                    CircleAvatar(
-                      radius: 52,
-                      backgroundColor: Colors.grey.shade300,
-                      backgroundImage: profilePic != null
-                          ? NetworkImage(profilePic)
-                          : null,
-                      child: profilePic == null
-                          ? const Icon(Icons.person, size: 48)
-                          : null,
+                    GestureDetector(
+                      onTap: () async {
+                        final granted = await _ensureGalleryPermission();
+                        if (!granted) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Gallery permission required to upload photo',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        final pickedFile = await ImagePicker().pickImage(
+                          source: ImageSource.gallery,
+                          maxWidth: 1600,
+                          imageQuality: 88,
+                        );
+                        if (pickedFile == null) return;
+                        final file = File(pickedFile.path);
+                        try {
+                          final url = await ProfileService.uploadProfilePic(
+                            file,
+                          );
+                          await ProfileService.updateProfilePic(url);
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Profile pic updated'),
+                            ),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: 52,
+                        backgroundColor: Colors.grey.shade300,
+                        backgroundImage: profilePic != null
+                            ? NetworkImage(profilePic)
+                            : null,
+                        child: profilePic == null
+                            ? const Icon(Icons.person, size: 48)
+                            : null,
+                      ),
                     ),
                     GestureDetector(
                       onTap: () async {
