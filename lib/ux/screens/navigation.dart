@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poke_up/constants/app_styling.dart';
 import 'package:poke_up/services/chat/chat_service.dart';
+import 'package:poke_up/ux/screens/home_feed_5.dart';
+import 'package:poke_up/ux/screens/map_vibes_screen_6.dart';
+import 'package:poke_up/ux/screens/conversations_screen_7.dart';
+import 'package:poke_up/ux/screens/profile_screen_8.dart';
 
 class Navigation extends StatelessWidget {
   final Widget child;
@@ -14,7 +18,15 @@ class Navigation extends StatelessWidget {
     final int currentIndex = _getCurrentIndex(context);
 
     return Scaffold(
-      body: child,
+      body: IndexedStack(
+        index: currentIndex,
+        children: const [
+          HomeFeed5(),
+          MapVibesScreen(),
+          ConversationsScreen(),
+          ProfileScreen(),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         selectedItemColor: AppStyling.primaryColor, // brand color
